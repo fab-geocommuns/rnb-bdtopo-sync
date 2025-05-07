@@ -13,7 +13,7 @@ La donnée de sortie est composée de :
 - Pour tenir à jour le stock RNB entretenu par l'IGN :
   - une liste des bâtiments RNB (avec l'ensemble de leurs attributs) à créer
   - une liste des bâtiments RNB (avec l'ensemble de leurs attributs) à mettre à jour
-- Pour tenir à jour la table de correspondance RNB x BD Topo
+- Pour tenir à jour la table de correspondance RNB x BD Topo :
   - une liste d'identifiants RNB à retirer de la table de correspondance RNB x BD Topo
   - une liste d'identifiants RNB où l'appariement RNB x BD Topo doit être (re)fait
 
