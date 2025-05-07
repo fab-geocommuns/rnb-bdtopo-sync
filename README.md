@@ -16,7 +16,7 @@ La donnée de sortie est composée de :
   - une liste d'identifiants RNB à retirer de la table de correspondance RNB x BD Topo, mise à disposition dans un fichier CSV `link_remove.csv`
   - une liste d'identifiants RNB où l'appariement RNB x BD Topo doit être (re)fait, mise à disposition dans un fichier CSV `link_calculate.csv`
 
-Les fichiers `stock_create.csv` et `stock_update.csv` ont le même format que le fichier de diff RNB mais ne contiennent qu'une seule ligne par bâtiment RNB (la plus récente).
+Le fichier `rnb_last_changes.csv` ont le même format que le fichier de diff RNB mais ne contiennent qu'une seule ligne par bâtiment RNB (la plus récente).
 Les fichiers `link_remove.csv` et `link_calculate.csv` sont composés d'une seule colonne `rnb_id`.
 
 # Constitution des fichiers CSV
