@@ -10,9 +10,11 @@ La donnée d'entrée du script est [le fichier de diff](https://rnb-fr.gitbook.i
 
 La donnée de sortie est composée de : 
 
-- une liste des bâtiments RNB (avec l'ensemble de leurs attributs) à créer dans la copie entretenue par l'IGN
-- une liste des bâtiments RNB (avec l'ensemble de leurs attributs) à mettre à jour dans la copie entretenue par l'IGN
-- une liste d'identifiants RNB à retirer de la table de correspondance RNB x BD Topo
-- une liste d'identifiants RNB où l'appariement RNB x BD Topo doit être (re)fait
+- Pour tenir à jour le stock RNB entretenu par l'IGN :
+  - une liste des bâtiments RNB (avec l'ensemble de leurs attributs) à créer
+  - une liste des bâtiments RNB (avec l'ensemble de leurs attributs) à mettre à jour
+- Pour tenir à jour la table de correspondance RNB x BD Topo
+  - une liste d'identifiants RNB à retirer de la table de correspondance RNB x BD Topo
+  - une liste d'identifiants RNB où l'appariement RNB x BD Topo doit être (re)fait
 
 
