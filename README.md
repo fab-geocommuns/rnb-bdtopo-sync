@@ -36,14 +36,14 @@ On importera le fichier `rnb_last_changes.csv` en faisant un `upsert` pour chaqu
 On part du fichier `rnb_last_changes.csv` fabriqué à l'étape précédente.
 
 1. On créé deux sets vides :
-    a. `to_remove = set()`
-    b. `to_calculate = set()`
+    1. `to_remove = set()`
+    2. `to_calculate = set()`
 3. Pour chaque ligne on vérifie si :
-    a. le champ `is_active == False`
-    b. **OU** la valeur du champ `status` est parmi `constructionProject`, `canceledConstructionProject`, `demolished`
+    1. le champ `is_active == False`
+    2. **OU** la valeur du champ `status` est parmi `constructionProject`, `canceledConstructionProject`, `demolished`
 4. En fonction du résultat de la vérification :
-    a. si la ligne correspond aux conditions, il s'agit d'un lien RNB x BD Topo à supprimer. On ajoute le champ `rnb_id` à la variable `to_remove`
-    b. sinon, il s'agit d'un (ré)appariement RNB x BD topo à faire. On ajoute le champ `rnb_id` à la variable `to_calculate`
+    1. si la ligne correspond aux conditions, il s'agit d'un lien RNB x BD Topo à supprimer. On ajoute le champ `rnb_id` à la variable `to_remove`
+    2. sinon, il s'agit d'un (ré)appariement RNB x BD topo à faire. On ajoute le champ `rnb_id` à la variable `to_calculate`
 6. On enregistre le contenu de `to_remove` dans le fichier CSV `link_remove.csv`
 7. On enregistre le contenu de `to_calculate` dans le fichier CSV `link_calculate.csv`
 
