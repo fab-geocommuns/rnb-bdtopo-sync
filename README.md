@@ -36,8 +36,8 @@ On importera le fichier `rnb_last_changes.csv` en faisant un `upsert` pour chaqu
 On part du fichier `rnb_last_changes.csv` fabriqué à l'étape précédente.
 
 1. Pour chaque ligne on vérifie si :
-   a. le champ `is_active == False`
-   b. ou la valeur du champ `status` est parmi `constructionProject`, `canceledConstructionProject`, `demolished`
+    a. le champ `is_active == False`
+    b. ou la valeur du champ `status` est parmi `constructionProject`, `canceledConstructionProject`, `demolished`
 2. On conserve les lignes répondant à une de ces conditions
 3. On conserve uniquement le champ `rnb_id` de chaque ligne
 4. On enregistre cette liste d'identifiants RNB dans le fichier CSV `link_remove.csv`
