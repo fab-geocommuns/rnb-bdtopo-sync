@@ -38,14 +38,14 @@ On part du fichier `rnb_last_changes.csv` fabriqué à l'étape précédente.
 1. On créé deux sets vides :
     1. `to_remove = set()`
     2. `to_calculate = set()`
-3. Pour chaque ligne on vérifie si :
+2. Pour chaque ligne on vérifie si :
     1. le champ `is_active == False`
-    2. **OU** la valeur du champ `status` est parmi `constructionProject`, `canceledConstructionProject`, `demolished`
-4. En fonction du résultat de la vérification :
+    2. **OU** la valeur du champ `status` est parmi `constructionProject`, `canceledConstructionProject`
+3. En fonction du résultat de la vérification :
     1. si la ligne correspond aux conditions, il s'agit d'un lien RNB x BD Topo à supprimer. On ajoute le champ `rnb_id` à la variable `to_remove`
     2. sinon, il s'agit d'un (ré)appariement RNB x BD topo à faire. On ajoute le champ `rnb_id` à la variable `to_calculate`
-6. On enregistre le contenu de `to_remove` dans le fichier CSV `link_remove.csv`
-7. On enregistre le contenu de `to_calculate` dans le fichier CSV `link_calculate.csv`
+4. On enregistre le contenu de `to_remove` dans le fichier CSV `link_remove.csv`
+5. On enregistre le contenu de `to_calculate` dans le fichier CSV `link_calculate.csv`
 
 On utilisera le fichier `link_remove.csv` pour supprimer tous les liens RNB x BD Topo concernés par ces identifiants RNB.
 On utilisera le fichier `link_calculate.csv` pour (re)déclencher l'algo d'appariement pour chacun de ces bâtiments RNB.
