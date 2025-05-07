@@ -25,7 +25,7 @@ Les fichiers `link_remove.csv` et `link_calculate.csv` sont composés d'une seul
 
 On part du fichier de diff RNB.
 
-1. On trie l'ensemble des lignes par `rnb_id` puis pour chaque groupe d'ID RNB, par `updated_at`
+1. On trie l'ensemble des lignes par `rnb_id` puis pour chaque groupe d'ID RNB, par `updated_at` croissant
 2. Pour chaque groupe d'ID RNB, on ne garde que la dernière ligne de chaque bâtiment (la plus récente)
 3. On sauvegarde le fichier CSV
 
