@@ -1,4 +1,5 @@
 import csv
+import io
 import requests
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -15,25 +16,27 @@ Fonction de Récupération en local du fichier CSV de Diff RNB
 """
 
 
-def getDiff_RNB_from_date(date_since, file_out):
+def getDiff_RNB_from_date(since: datetime, file_out) -> list:
     # date à partir de laquelle on récupère les changements dans le RNB
     # date_since = "2025-06-15T00:00:00Z"
 
     # URL de l'API RNB qui renvoie un fichier CSV de différentiel
-    url = "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since=" + date_since
+    url = (
+        "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
+        + since.isoformat()
+    )
 
+    # On télécharge le fichier de diff du RNB
     response = requests.get(url)
+    response.raise_for_status()
 
-    # Vérifie que la requête a réussi
-    if response.status_code == 200:
-        # Enregistrement du contenu dans un fichier CSV local
-        with open(file_out, "wb") as f:
-            f.write(response.content)
-        print("Fichier CSV téléchargé avec succès.")
-        return True
-    else:
-        print(f"Erreur lors de la requête : {response.status_code}")
-        return False
+    # On garde le contenu du CSV en mémoire.
+    # Pas besoin de l'écrire dans un fichier
+    csv_file = io.StringIO(response.text)
+    reader = csv.reader(csv_file)
+
+    # On renvoit le contenu du CSV sous forme de liste
+    return list(reader)
 
 
 """
