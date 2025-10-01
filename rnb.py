@@ -1,9 +1,9 @@
 import csv
 import io
+import re
 import requests
 from collections import defaultdict
 from datetime import datetime
-import re
 
 
 def getDiff_RNB_from_date(since: datetime) -> list:
