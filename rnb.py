@@ -48,17 +48,16 @@ def rnb_get_most_recent(liste_batiments):
 
     # Receherche de l'élément avec la date de début la plus récente
     result = []
-    for rnb_id, items in grouped.items():
+    for _, items in grouped.items():
         # On trie les éléments du groupe par date de début décroissante
         sorted_items = sorted(
             items, key=lambda x: extract_start_date(x["sys_period"]), reverse=True
         )
         # On prend le plus récent
         if sorted_items:
-
             result.append(sorted_items[0])
         else:
-            print("pb sur une recherche de most recent")
+            raise ValueError("Aucun élément trouvé pour le groupe donné.")
 
     return result
 
