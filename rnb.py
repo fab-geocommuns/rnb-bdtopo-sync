@@ -12,7 +12,7 @@ def getDiff_RNB_from_file(filename: str) -> list:
 
     # On ouvre le fichier CSV en lecture
     with open(filename, mode="r", encoding="utf-8") as csvfile:
-        reader = csv.reader(csvfile)
+        reader = csv.DictReader(csvfile)
 
         # On renvoit le contenu du CSV sous forme de liste
         return list(reader)
@@ -34,7 +34,7 @@ def getDiff_RNB_from_date(since: datetime) -> list:
     # On garde le contenu du CSV en mémoire.
     # Pas besoin de l'écrire dans un fichier
     csv_file = io.StringIO(response.text)
-    reader = csv.reader(csv_file)
+    reader = csv.DictReader(csv_file)
 
     # On renvoit le contenu du CSV sous forme de liste
     return list(reader)
@@ -55,25 +55,20 @@ def extract_start_date(sys_period_str):
 # fonction pour trier une liste de batiments et fournir en sortie version la plus récente selon le champ "sys_period"
 #  prend en entrée une liste de batiment et retourne pour chaque rnb_id identiques l'élément avec la date la plus récente
 def rnb_get_most_recent(liste_batiments):
-    # Groupement des éléments par rnb_id
-    grouped = defaultdict(list)
-    for item in liste_batiments:
-        grouped[item["rnb_id"]].append(item)
 
-    # Receherche de l'élément avec la date de début la plus récente
-    result = []
-    for _, items in grouped.items():
-        # On trie les éléments du groupe par date de début décroissante
-        sorted_items = sorted(
-            items, key=lambda x: extract_start_date(x["sys_period"]), reverse=True
-        )
-        # On prend le plus récent
-        if sorted_items:
-            result.append(sorted_items[0])
-        else:
-            raise ValueError("Aucun élément trouvé pour le groupe donné.")
+    result = {}
 
-    return result
+    for bdg in liste_batiments:
+
+        bdg["updated_at"] = extract_start_date(bdg["sys_period"])
+
+        if bdg["rnb_id"] not in result:
+            result[bdg["rnb_id"]] = bdg
+        elif bdg["updated_at"] > result[bdg["rnb_id"]]["updated_at"]:
+            result[bdg["rnb_id"]] = bdg
+
+    # On retourne uniquement les valeurs (les bâtiments) et non les clés (les rnb_id)
+    return list(result.values())
 
 
 def dispatch_rows(rnb_diff) -> tuple[set, set]:
