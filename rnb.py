@@ -75,6 +75,8 @@ def rnb_get_most_recent(liste_batiments: Iterable[dict[str, str]]):
 
 def dispatch_rows(rnb_diff) -> tuple[set, set]:
 
+    print("Dispatching rows...")
+
     to_remove = set()
     to_calculate = set()
 
@@ -91,6 +93,9 @@ def dispatch_rows(rnb_diff) -> tuple[set, set]:
             to_remove.add(batiment_rnb["rnb_id"])
         else:
             to_calculate.add(batiment_rnb["rnb_id"])
+
+    print(f"To remove: {len(to_remove)}")
+    print(f"To calculate: {len(to_calculate)}")
 
     return to_remove, to_calculate
 

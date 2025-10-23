@@ -37,8 +37,8 @@ def sync_rnb_from_file(filename: str):
 
 if __name__ == "__main__":
 
-    # sync_rnb_from_file("data/diff_2024-05-01.csv")  # 4.2 Go
-    sync_rnb_from_file("data/diff_2025-01-10.csv")  # 1.4 Go
+    sync_rnb_from_file("data/diff_2024-05-01.csv")  # 4.2 Go
+    # sync_rnb_from_file("data/diff_2025-01-10.csv")  # 1.4 Go
     # sync_rnb_from_file("data/diff_2025-06-01.csv") 53 Mo
 
     # one_week_ago = datetime.now() - timedelta(weeks=1)
