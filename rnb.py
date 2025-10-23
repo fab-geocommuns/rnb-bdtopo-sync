@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 
 
-def getDiff_RNB_from_file(filename: str) -> list:
+def getDiff_RNB_from_file(filename: str) -> csv.DictReader:
 
     print(f"Opening file: {filename}")
 
@@ -14,11 +14,11 @@ def getDiff_RNB_from_file(filename: str) -> list:
     with open(filename, mode="r", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
 
-        # On renvoit le contenu du CSV sous forme de liste
-        return list(reader)
+        # On renvoit le reader pour traitement ultérieur
+        return reader
 
 
-def getDiff_RNB_from_date(since: datetime) -> list:
+def getDiff_RNB_from_date(since: datetime) -> csv.DictReader:
 
     url = (
         "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
@@ -36,8 +36,8 @@ def getDiff_RNB_from_date(since: datetime) -> list:
     csv_file = io.StringIO(response.text)
     reader = csv.DictReader(csv_file)
 
-    # On renvoit le contenu du CSV sous forme de liste
-    return list(reader)
+    # On renvoit le reader pour traitement ultérieur
+    return reader
 
 
 # todo : est-ce qu'on peut avoir une lecture plus simple ?
@@ -54,7 +54,7 @@ def extract_start_date(sys_period_str):
 
 # fonction pour trier une liste de batiments et fournir en sortie version la plus récente selon le champ "sys_period"
 #  prend en entrée une liste de batiment et retourne pour chaque rnb_id identiques l'élément avec la date la plus récente
-def rnb_get_most_recent(liste_batiments):
+def rnb_get_most_recent(liste_batiments: csv.DictReader):
 
     result = {}
 
