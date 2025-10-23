@@ -55,29 +55,37 @@ def extract_start_date(sys_period_str):
 # fonction pour trier une liste de batiments et fournir en sortie version la plus récente selon le champ "sys_period"
 #  prend en entrée une liste de batiment et retourne pour chaque rnb_id identiques l'élément avec la date la plus récente
 def rnb_get_most_recent(liste_batiments):
-    # Groupement des éléments par rnb_id
-    grouped = defaultdict(list)
-    for item in liste_batiments:
-        grouped[item['rnb_id']].append(item)
 
 
-    # Receherche de l'élément avec la date de début la plus récente
-    result = []
-    for rnb_id, items in grouped.items():
-        # On trie les éléments du groupe par date de début décroissante
-        sorted_items = sorted(
-            items,
-            key=lambda x: extract_start_date(x['sys_period']),
-            reverse=True
-        )
-        # On prend le plus récent
-        if sorted_items:
+    # Modification du champ sys_period pour le remplacer par la date de début de période
+    liste_batiments['sys_period'] = liste_batiments['sys_period'].apply(extract_start_date)
 
-            result.append(sorted_items[0])
-        else :
-            print("pb sur une recherche de most recent")
+    # Tri par rnb_id croissant et sys_period décroissant
+    liste_batiments.sort_values(['rnb_id','sys_period'], ascending=[True,False], inplace=True)
+
+    # # Groupement des éléments par rnb_id
+    # grouped = defaultdict(list)
+    # for item in liste_batiments:
+    #     grouped[item['rnb_id']].append(item)
+    #
+    #
+    # # Receherche de l'élément avec la date de début la plus récente
+    # result = []
+    # for rnb_id, items in grouped.items():
+    #     # On trie les éléments du groupe par date de début décroissante
+    #     sorted_items = sorted(
+    #         items,
+    #         key=lambda x: extract_start_date(x['sys_period']),
+    #         reverse=True
+    #     )
+    #     # On prend le plus récent
+    #     if sorted_items:
+    #
+    #         result.append(sorted_items[0])
+    #     else :
+    #         print("pb sur une recherche de most recent")
     
-    return result
+    return liste_batiments
 
 """
 ---------------------------------------
@@ -99,11 +107,13 @@ def tri_rnb_last_changes(file_in):
 
     print("nb bati à trier : ", len(list_batiments_rnb))
     # tri des batiments par rnb_id croissant et date la plus récente
-    print(list_batiments_rnb.head(3))
-    #list_batiments_rnb_most_recent = rnb_get_most_recent(list_batiments_rnb)
-    #print("nb bati plus récents : ", len(list_batiments_rnb_most_recent))
+    print(list_batiments_rnb.head(5))
+    list_batiments_rnb_most_recent = rnb_get_most_recent(list_batiments_rnb)
+    print(list_batiments_rnb_most_recent.head(5))
+    print(list_batiments_rnb_most_recent.iloc[0:5,0:5])
+    print("nb bati plus récents : ", len(list_batiments_rnb_most_recent))
     #list_batiments_rnb_sorted = sorted(list_batiments_rnb_most_recent, key=lambda x: x["rnb_id"])
-    list_batiments_rnb_sorted = list_batiments_rnb
+    list_batiments_rnb_sorted = list_batiments_rnb_most_recent
 
     print("nb bati triés : ", len(list_batiments_rnb_sorted))
     return list_batiments_rnb_sorted
