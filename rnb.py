@@ -2,23 +2,24 @@ import csv
 import io
 import re
 import requests
-from collections import defaultdict
 from datetime import datetime
+from typing import Iterator, Iterable
 
 
-def getDiff_RNB_from_file(filename: str) -> csv.DictReader:
+def getDiff_RNB_from_file(filename: str) -> Iterator[dict[str, str]]:
 
     print(f"Opening file: {filename}")
 
-    # On ouvre le fichier CSV en lecture
-    with open(filename, mode="r", encoding="utf-8") as csvfile:
-        reader = csv.DictReader(csvfile)
+    def iterate_rows() -> Iterator[dict[str, str]]:
+        with open(filename, mode="r", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                yield row
 
-        # On renvoit le reader pour traitement ultérieur
-        return reader
+    return iterate_rows()
 
 
-def getDiff_RNB_from_date(since: datetime) -> csv.DictReader:
+def getDiff_RNB_from_date(since: datetime) -> Iterator[dict[str, str]]:
 
     url = (
         "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
@@ -31,13 +32,14 @@ def getDiff_RNB_from_date(since: datetime) -> csv.DictReader:
     response = requests.get(url)
     response.raise_for_status()
 
-    # On garde le contenu du CSV en mémoire.
-    # Pas besoin de l'écrire dans un fichier
-    csv_file = io.StringIO(response.text)
-    reader = csv.DictReader(csv_file)
+    def iterate_rows() -> Iterator[dict[str, str]]:
+        # On garde le contenu du CSV en mémoire pour le parcourir
+        csv_file = io.StringIO(response.text)
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            yield row
 
-    # On renvoit le reader pour traitement ultérieur
-    return reader
+    return iterate_rows()
 
 
 # todo : est-ce qu'on peut avoir une lecture plus simple ?
@@ -54,7 +56,7 @@ def extract_start_date(sys_period_str):
 
 # fonction pour trier une liste de batiments et fournir en sortie version la plus récente selon le champ "sys_period"
 #  prend en entrée une liste de batiment et retourne pour chaque rnb_id identiques l'élément avec la date la plus récente
-def rnb_get_most_recent(liste_batiments: csv.DictReader):
+def rnb_get_most_recent(liste_batiments: Iterable[dict[str, str]]):
 
     result = {}
 

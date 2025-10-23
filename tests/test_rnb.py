@@ -36,35 +36,38 @@ class TestDiffSorting(unittest.TestCase):
 
     def test_simple(self):
 
-        data = [
-            {
-                "rnb_id": "id1",
-                "sys_period": '["2023-12-08 11:44:32.395076+01","2023-12-22 12:52:29.558363+01")',
-                "extra": "val1",
-            },
-            {
-                "rnb_id": "id1",
-                "sys_period": '["2023-12-22 12:52:29.558363+01","2023-12-24 17:19:12.971005+01")',
-                "extra": "val2",
-            },
-            {
-                "rnb_id": "id2",
-                "sys_period": '["2023-11-08 11:44:32.395076+01","2023-12-22 12:52:29.558363+01")',
-                "extra": "val3",
-            },
-            {
-                "rnb_id": "id2",
-                "sys_period": '["2023-12-22 12:52:29.558363+01","2023-12-24 17:19:12.971005+01")',
-                "extra": "val4",
-            },
-            {
-                "rnb_id": "id2",
-                "sys_period": '["2022-01-01 11:44:32.395076+01",)',
-                "extra": "val0",
-            },
-        ]
+        def iter_rows():
+            rows = [
+                {
+                    "rnb_id": "id1",
+                    "sys_period": '["2023-12-08 11:44:32.395076+01","2023-12-22 12:52:29.558363+01")',
+                    "extra": "val1",
+                },
+                {
+                    "rnb_id": "id1",
+                    "sys_period": '["2023-12-22 12:52:29.558363+01","2023-12-24 17:19:12.971005+01")',
+                    "extra": "val2",
+                },
+                {
+                    "rnb_id": "id2",
+                    "sys_period": '["2023-11-08 11:44:32.395076+01","2023-12-22 12:52:29.558363+01")',
+                    "extra": "val3",
+                },
+                {
+                    "rnb_id": "id2",
+                    "sys_period": '["2023-12-22 12:52:29.558363+01","2023-12-24 17:19:12.971005+01")',
+                    "extra": "val4",
+                },
+                {
+                    "rnb_id": "id2",
+                    "sys_period": '["2022-01-01 11:44:32.395076+01",)',
+                    "extra": "val0",
+                },
+            ]
+            for row in rows:
+                yield row
 
-        data = rnb_get_most_recent(data)
+        data = rnb_get_most_recent(iter_rows())
 
         # on doit avoir 2 éléments, un par rnb_id
         self.assertEqual(len(data), 2)
