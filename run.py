@@ -1,6 +1,11 @@
 import datetime
 from datetime import datetime, timedelta
-from rnb import getDiff_RNB_from_date, rnb_get_most_recent, dispatch_rows
+from rnb import (
+    getDiff_RNB_from_date,
+    getDiff_RNB_from_file,
+    rnb_get_most_recent,
+    dispatch_rows,
+)
 
 
 def sync_rnb(since: datetime):
@@ -21,7 +26,18 @@ def sync_rnb(since: datetime):
     # 3. Remplir la table de liens à recalculer
 
 
+def sync_rnb_from_file(filename: str):
+
+    rnb_diff = getDiff_RNB_from_file(filename)
+
+    rnb_diff = rnb_get_most_recent(rnb_diff)
+
+    to_remove, to_calculate = dispatch_rows(rnb_diff)
+
+
 if __name__ == "__main__":
 
-    one_week_ago = datetime.now() - timedelta(weeks=1)
-    sync_rnb(one_week_ago)
+    sync_rnb_from_file("data/diff_2025-06-01.csv")
+
+    # one_week_ago = datetime.now() - timedelta(weeks=1)
+    # sync_rnb(one_week_ago)

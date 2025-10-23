@@ -6,12 +6,26 @@ from collections import defaultdict
 from datetime import datetime
 
 
+def getDiff_RNB_from_file(filename: str) -> list:
+
+    print(f"Opening file: {filename}")
+
+    # On ouvre le fichier CSV en lecture
+    with open(filename, mode="r", encoding="utf-8") as csvfile:
+        reader = csv.reader(csvfile)
+
+        # On renvoit le contenu du CSV sous forme de liste
+        return list(reader)
+
+
 def getDiff_RNB_from_date(since: datetime) -> list:
 
     url = (
         "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
         + since.isoformat()
     )
+
+    print(f"Downloading: {url}")
 
     # On télécharge le fichier de diff du RNB
     response = requests.get(url)
