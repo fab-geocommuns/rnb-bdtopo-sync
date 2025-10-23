@@ -4,9 +4,12 @@ from datetime import datetime
 
 import psycopg2
 
-from decode__diff_rnb_csv import getDiff_RNB_from_date, tri_rnb_last_changes, tri_rnb_to_remove_or_to_calculate, remodel_rnb_to_last_changes
-
-
+from rnb import (
+    getDiff_RNB_from_date,
+    tri_rnb_last_changes,
+    dispatch_rows,
+    remodel_rnb_to_last_changes,
+)
 
 
 # connexion à la BDU Consult
@@ -16,9 +19,13 @@ port_bduni = "5432"
 user_bduni = "pbm"
 user_recserveur = "recserveur"
 bdd_bduni = "bduni_france_consultation"
-#connexion prod pbm
-conn_pbm = psycopg2.connect(host=hote_bduni, database=bdd_bduni, user=user_bduni, password="")
+# connexion prod pbm
+conn_pbm = psycopg2.connect(
+    host=hote_bduni, database=bdd_bduni, user=user_bduni, password=""
+)
 cur_pbm = conn_pbm.cursor()
+
+
 def pbm_tryexecute(sql):
     try:
         cur_pbm.execute(sql)
@@ -26,6 +33,8 @@ def pbm_tryexecute(sql):
         print(sql)
         print(error)
     conn_pbm.commit()
+
+
 def pbm_tryexecute_avc_sortie(sql):
     try:
         cur_pbm.execute(sql)
@@ -36,7 +45,8 @@ def pbm_tryexecute_avc_sortie(sql):
     except (Exception, psycopg2.Error) as error:
         print(sql)
         print(error)
-        return ''
+        return ""
+
 
 # aujourd'hui
 aujourd_hui = datetime.now().strftime("%Y-%m-%d")
@@ -52,19 +62,21 @@ batiments_rnb_last_changes = tri_rnb_last_changes(csv_diff_rnb)
 # calcul des id_rnb à supprimer de la base BDTopo, ou à mettre à jour
 print("tri des batiments to_remove et to_calculate")
 
-batiments_rnb_last_changes_filtred, rnb_to_remove, rnb_to_calculate = tri_rnb_to_remove_or_to_calculate(batiments_rnb_last_changes)
+batiments_rnb_last_changes_filtred, rnb_to_remove, rnb_to_calculate = dispatch_rows(
+    batiments_rnb_last_changes
+)
 batiments_rnb = remodel_rnb_to_last_changes(batiments_rnb_last_changes_filtred)
 
 
 # test connexion
 # pbm_tryexecute_avc_sortie('SELECT * from pbm.rnb_test_import_csv_light')
 
-#préparation des tables temporaires pour le bati entier rnb
-sql = 'DROP TABLE IF EXISTS pbm.rnb_to_calculate cascade;'
+# préparation des tables temporaires pour le bati entier rnb
+sql = "DROP TABLE IF EXISTS pbm.rnb_to_calculate cascade;"
 pbm_tryexecute_avc_sortie(sql)
 
 # creation de la table receptionnant le contenu du csv last_changes
-sql = '''\
+sql = """\
     CREATE TABLE IF NOT EXISTS pbm.rnb_to_calculate (action varchar NULL,\
 	rnb_id varchar NULL,\
 	status varchar NULL,\
@@ -81,44 +93,48 @@ sql = '''\
     GRANT SELECT ON pbm.rnb_to_calculate TO invite;\
     CREATE INDEX pbm_rnb_to_calculate_shape_idx ON pbm.rnb_to_calculate USING gist (shape);\
     COMMENT ON TABLE pbm.rnb_to_calculate IS 'Ne pas supprimer - {0}';\
-    '''.format(aujourd_hui)
+    """.format(
+    aujourd_hui
+)
 pbm_tryexecute(sql)
 
-sql = 'DROP TABLE IF EXISTS pbm.rnb_to_remove cascade;'
+sql = "DROP TABLE IF EXISTS pbm.rnb_to_remove cascade;"
 pbm_tryexecute_avc_sortie(sql)
 
 # creation de la table receptionnant le contenu de la liste d'identifiants RNB "to_remove"
-sql = '''\
+sql = """\
     CREATE TABLE IF NOT EXISTS pbm.rnb_to_remove (rnb_id varchar NULL);\
 	CREATE UNIQUE INDEX "pbm_rnb_to_remove_rnb_id_pkey" ON pbm.rnb_to_remove USING btree (rnb_id);\
     GRANT SELECT ON pbm.rnb_to_remove TO invite;\
     COMMENT ON TABLE pbm.rnb_to_remove IS 'Ne pas supprimer - {0}';
-    '''.format(aujourd_hui)
+    """.format(
+    aujourd_hui
+)
 pbm_tryexecute(sql)
 
 
-
-
-
 # remplissage de la table rnb_to_calculate à partir du CSV last_changes en supprimant les batiments RNB qui font partie de la liste to_remove
-sql_insert=''
-i=0
+sql_insert = ""
+i = 0
 for line_batiment_rnb in batiments_rnb_last_changes_filtred:
-    sql_insert=("INSERT INTO pbm.rnb_to_calculate (action,rnb_id,status,sys_period,point,shape,addresses_id,ext_ids,created_at,updated_at,event_type) \
-                 VALUES ('{0}','{1}','{2}','{3}',ST_GeomFromEWKT('{4}'),ST_GeomFromEWKT('{5}'),'{6}','{7}','{8}','{9}','{10}');").format(
-                                                           line_batiment_rnb['action'],
-                                                                 line_batiment_rnb['rnb_id'],
-                                                                 line_batiment_rnb['status'],
-                                                                 line_batiment_rnb['sys_period'],
-                                                                 line_batiment_rnb['point'],
-                                                                 line_batiment_rnb['shape'],
-                                                                 line_batiment_rnb['addresses_id'],
-                                                                 line_batiment_rnb['ext_ids'],
-                                                                 line_batiment_rnb['created_at'],
-                                                                 line_batiment_rnb['updated_at'],
-                                                                 line_batiment_rnb['event_type'])
+    sql_insert = (
+        "INSERT INTO pbm.rnb_to_calculate (action,rnb_id,status,sys_period,point,shape,addresses_id,ext_ids,created_at,updated_at,event_type) \
+                 VALUES ('{0}','{1}','{2}','{3}',ST_GeomFromEWKT('{4}'),ST_GeomFromEWKT('{5}'),'{6}','{7}','{8}','{9}','{10}');"
+    ).format(
+        line_batiment_rnb["action"],
+        line_batiment_rnb["rnb_id"],
+        line_batiment_rnb["status"],
+        line_batiment_rnb["sys_period"],
+        line_batiment_rnb["point"],
+        line_batiment_rnb["shape"],
+        line_batiment_rnb["addresses_id"],
+        line_batiment_rnb["ext_ids"],
+        line_batiment_rnb["created_at"],
+        line_batiment_rnb["updated_at"],
+        line_batiment_rnb["event_type"],
+    )
 
-    i+=1
+    i += 1
     print("inserts to calculate ", i, "/", len(batiments_rnb_last_changes_filtred))
     # print(line_batiment_rnb)
 
@@ -126,14 +142,16 @@ for line_batiment_rnb in batiments_rnb_last_changes_filtred:
 
 
 # remplissage de la table rnb_to_remove qui contiendra la liste des rnb_id à supprimer de la base
-sql_insert=''
-i=0
+sql_insert = ""
+i = 0
 for rnb_id in rnb_to_remove:
-    sql_insert+=("INSERT INTO pbm.rnb_to_remove (rnb_id) VALUES ('{0}');").format(rnb_id)
+    sql_insert += ("INSERT INTO pbm.rnb_to_remove (rnb_id) VALUES ('{0}');").format(
+        rnb_id
+    )
     i += 1
-    #print("inserts to remove ",i,"/", len(rnb_to_remove))
+    # print("inserts to remove ",i,"/", len(rnb_to_remove))
 pbm_tryexecute(sql_insert)
-'''
+"""
 # préparation de la table de réconciliation pour mettre à jour la table batiment_rnb_lien_bdtopo
 sql_reconciliation_remove = "\
     DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_destruction CASCADE;\
@@ -147,4 +165,4 @@ sql_reconciliation_remove = "\
     COMMENT ON TABLE processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_destruction IS '"+aujourd_hui+"';"
 
 pbm_tryexecute(sql_reconciliation_remove)
-'''
+"""

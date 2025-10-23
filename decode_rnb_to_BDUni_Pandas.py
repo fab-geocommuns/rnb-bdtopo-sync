@@ -11,23 +11,31 @@ import time
 import psycopg2
 
 
-from decode__diff_rnb_csv import getDiff_RNB_from_date, tri_rnb_last_changes, tri_rnb_to_remove_or_to_calculate, remodel_rnb_to_last_changes
+from rnb import (
+    getDiff_RNB_from_date,
+    tri_rnb_last_changes,
+    dispatch_rows,
+    remodel_rnb_to_last_changes,
+)
+
 start = time.time()
 
 conf_path = Path("db_config.json")
 
-with open(conf_path) as config_filehandler :
+with open(conf_path) as config_filehandler:
     config_dict = json.load(config_filehandler)
+
 
 def get_conn_url(nom):
     return f"postgresql://{config_dict[nom]['user']}:{config_dict[nom]['password']}@{config_dict[nom]['host']}:{config_dict[nom]['port']}/{config_dict[nom]['name']}"
 
-if not 'conn_bduni_pbm' in locals():
-    db_bduni_pbm_connection_url = get_conn_url('bd_uni_consult')
+
+if not "conn_bduni_pbm" in locals():
+    db_bduni_pbm_connection_url = get_conn_url("bd_uni_consult")
     conn_bduni_pbm = sqla.create_engine(db_bduni_pbm_connection_url)
 
 b = pd.read_csv("rnb_last_changes.csv")
-b.to_sql("rnb_stock_import", schema="pbm", con=conn_bduni_pbm, if_exists='replace')
+b.to_sql("rnb_stock_import", schema="pbm", con=conn_bduni_pbm, if_exists="replace")
 
 # gp.read_file("D:/temp/RNB/diff_2025-06-01.csv", driver="CSV", geometry="shape")
 
@@ -155,7 +163,7 @@ b.to_sql("rnb_stock_import", schema="pbm", con=conn_bduni_pbm, if_exists='replac
 #     i += 1
 #     #print("inserts to remove ",i,"/", len(rnb_to_remove))
 # pbm_tryexecute(sql_insert)
-'''
+"""
 # préparation de la table de réconciliation pour mettre à jour la table batiment_rnb_lien_bdtopo
 sql_reconciliation_remove = "\
     DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_destruction CASCADE;\
@@ -169,7 +177,7 @@ sql_reconciliation_remove = "\
     COMMENT ON TABLE processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_destruction IS '"+aujourd_hui+"';"
 
 pbm_tryexecute(sql_reconciliation_remove)
-'''
+"""
 
 end = time.time()
 print(f"Temps d'exécution : {end - start:.4f} secondes")
