@@ -73,31 +73,34 @@ def rnb_get_most_recent(liste_batiments: Iterable[dict[str, str]]):
     return list(result.values())
 
 
-def dispatch_rows(rnb_diff) -> tuple[set, set]:
+def calc_to_remove(rnb_diff) -> set:
 
-    print("Dispatching rows...")
+    print("Calculating rows to remove in BD Topo ...")
+
+    seen_rnb_ids = set()
 
     to_remove = set()
-    to_calculate = set()
 
     for batiment_rnb in rnb_diff:
 
+        if batiment_rnb["rnb_id"] in seen_rnb_ids:
+            raise ValueError(
+                f"Duplicate rnb_id found in rnb_diff: {batiment_rnb['rnb_id']}"
+            )
+
+        seen_rnb_ids.add(batiment_rnb["rnb_id"])
+
+        # todo : est-ce qu'on veut vraiment casser les liens pour ces statuts ?
         # on veut casser les liens (ajouter à to_remove) si le batiment est inactif (is_active=0)
         # ou a un statut constructionProject ou canceledConstructionProject
-        # sinon, on veut créer ou mettre à jour le lien (ajouter à to_calculate)
 
-        if batiment_rnb["is_active"] == "0" or batiment_rnb["status"] in [
+        if batiment_rnb["is_active"] == 0 or batiment_rnb["status"] in [
             "constructionProject",
             "canceledConstructionProject",
         ]:
             to_remove.add(batiment_rnb["rnb_id"])
-        else:
-            to_calculate.add(batiment_rnb["rnb_id"])
 
-    print(f"To remove: {len(to_remove)}")
-    print(f"To calculate: {len(to_calculate)}")
-
-    return to_remove, to_calculate
+    return to_remove
 
 
 """

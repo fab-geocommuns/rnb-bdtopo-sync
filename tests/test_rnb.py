@@ -2,7 +2,7 @@
 from datetime import datetime
 import unittest
 
-from rnb import extract_start_date, rnb_get_most_recent
+from rnb import extract_start_date, rnb_get_most_recent, calc_to_remove
 
 
 class TestParseSysperiod(unittest.TestCase):
@@ -87,6 +87,40 @@ class TestDiffSorting(unittest.TestCase):
             '["2023-12-22 12:52:29.558363+01","2023-12-24 17:19:12.971005+01")',
         )
         self.assertEqual(data[1]["extra"], "val4")
+
+
+class TestRemoveCalc(unittest.TestCase):
+
+    def test_simple(self):
+
+        row = [
+            {
+                "rnb_id": "id1",
+                "is_active": 0,
+                "status": "constructionProject",
+            },
+            {
+                "rnb_id": "id2",
+                "is_active": 1,
+                "status": "canceledConstructionProject",
+            },
+            {
+                "rnb_id": "id3",
+                "is_active": 1,
+                "status": "demolished",
+            },
+            {
+                "rnb_id": "id4",
+                "is_active": 0,
+                "status": "notUsable",
+            },
+        ]
+
+        to_remove = calc_to_remove(row)
+
+        expected = set(["id1", "id2", "id4"])
+
+        self.assertEqual(to_remove, expected)
 
 
 if __name__ == "__main__":
