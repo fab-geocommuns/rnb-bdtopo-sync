@@ -19,6 +19,8 @@ def sync_rnb(since: datetime) -> tuple[list, set]:
     # On tri entre les liens à casser ou les apapriemrnts à recalculer
     to_remove = calc_to_remove(last_changes)
 
+    print(f"{len(to_remove)} éléments vont etre supprimés ")
+
     return last_changes, to_remove
 
     # On a nos données. On est prêts à insérer en base.
