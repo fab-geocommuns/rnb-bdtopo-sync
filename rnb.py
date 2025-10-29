@@ -59,9 +59,9 @@ def extract_start_date(sys_period_str):
 def rnb_get_most_recent(liste_batiments: Iterable[dict[str, str]]):
 
     result = {}
-
+    
     for bdg in liste_batiments:
-
+        
         bdg["updated_at"] = extract_start_date(bdg["sys_period"])
 
         if bdg["rnb_id"] not in result:
