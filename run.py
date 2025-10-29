@@ -5,6 +5,7 @@ from rnb import (
     getDiff_RNB_from_file,
     rnb_get_most_recent,
     calc_to_remove,
+    persist_last_changes,
 )
 
 
@@ -13,28 +14,26 @@ def sync_rnb(since: datetime) -> tuple[list, set]:
     # Télécharger le fichier de diff
     rnb_diff = getDiff_RNB_from_date(since)
 
-    # On garde uniquement les lignes les plus récentes par rnb_id
-    last_changes = rnb_get_most_recent(rnb_diff)
-
-    # On tri entre les liens à casser ou les apapriemrnts à recalculer
-    to_remove = calc_to_remove(last_changes)
-
-    return last_changes, to_remove
-
-    # On a nos données. On est prêts à insérer en base.
-
-    # 1. Mettre à jour le stock RNB
-    # 2. Remplir la table de liens à supprimer
-    # 3. Remplir la table de liens à recalculer
+    _handle_rnb_diff(rnb_diff)
 
 
 def sync_rnb_from_file(filename: str) -> tuple[list, set]:
 
     rnb_diff = getDiff_RNB_from_file(filename)
 
-    last_changes = rnb_get_most_recent(rnb_diff)
+    _handle_rnb_diff(rnb_diff)
+
+
+def _handle_rnb_diff(diff):
+
+    last_changes = rnb_get_most_recent(diff)
 
     to_remove = calc_to_remove(last_changes)
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    persist_last_changes(last_changes, today)
+    persist_to_remove(last_changes, today)
 
     return last_changes, to_remove
 
