@@ -10,25 +10,118 @@ select
 join public.batiment_rnb_lien_bdtopo brlb on identifiant_rnb = rnb_id;
 
 
-
 --------- création de la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo correspondants à la table rnb_to_calculate
-DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;
-CREATE TABLE processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage AS 
+--------- version pour les bâtiments qui ont changé de géometrie
+DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_diff CASCADE;
+CREATE TABLE processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_diff AS 
 select
 	brlb.cleabs,
 	null as gcms_fingerprint,
 	rtc.rnb_id as identifiant_rnb,
 	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
 	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
-	'{"ext_ids": ' || rtc.ext_ids || ', ' || '"created_at": "'|| rtc.created_at || '", ' || '"updated_at": "'|| rtc.updated_at || '", ' || '"identifiants_ban": ' || rtc.addresses_id ||'}' as informations_rnb
+	json_build_object(
+		'ext_ids', rtc.ext_ids,
+		'created_at', rtc.created_at,
+		'updated_at', rtc.updated_at,
+		'status', rtc.status,
+		'event_type', rtc.event_type,
+		'parent_buildings', rtc.parent_buildings,
+		'identifiants_ban', rtc.addresses_id
+	)::varchar as informations_rnb,
+	'to_link' as commentaire_centralise
 
 from pbm.rnb_to_calculate rtc 
 join public.gcms_territoire gt 
   	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
 join public.batiment_rnb_lien_bdtopo brlb
 	on brlb.identifiant_rnb = rtc.rnb_id
-where rtc.action like 'update'
+where (rtc.action like 'update' or (rtc.action like 'create' and rtc.event_type like 'reactivation'))
+and not ST_DWithin(ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon), brlb.geometrie_enveloppe,1)
+;
+
+
+--------- création de la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo correspondants à la table rnb_to_calculate
+--------- version pour les bâtiments qui ont changé de géometrie
+DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_diff CASCADE;
+CREATE TABLE processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_diff AS 
+select
+	brlb.cleabs,
+	null as gcms_fingerprint,
+	rtc.rnb_id as identifiant_rnb,
+	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
+	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
+	'{"ext_ids": ' || rtc.ext_ids || ', ' 
+		|| '"created_at": "'|| rtc.created_at || '", ' 
+		|| '"updated_at": "'|| rtc.updated_at || '", '
+		|| '"status": "'|| rtc.status || '", '
+		|| '"event_type": "'|| rtc.event_type || '", '
+		|| '"parent_buildings": '|| rtc.parent_buildings ||', '
+		|| '"identifiants_ban": '|| rtc.addresses_id ||'}'::json as informations_rnb,
+	'to_link' as commentaire_centralise
+
+from pbm.rnb_to_calculate rtc 
+join public.gcms_territoire gt 
+  	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
+join public.batiment_rnb_lien_bdtopo brlb
+	on brlb.identifiant_rnb = rtc.rnb_id
+where (rtc.action like 'update' or (rtc.action like 'create' and rtc.event_type like 'reactivation'))
+and not ST_DWithin(ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon), brlb.geometrie_enveloppe,1)
+;
+
+--------- création de la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo correspondants à la table rnb_to_calculate
+--------- version pour les bâtiments qui N'ONT PAS changé de géometrie
+DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_equal CASCADE;
+CREATE TABLE processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_equal AS 
+select
+	brlb.cleabs,
+	null as gcms_fingerprint,
+	rtc.rnb_id as identifiant_rnb,
+	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
+	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
+	'{"ext_ids": ' || rtc.ext_ids || ', ' 
+		|| '"created_at": "'|| rtc.created_at || '", ' 
+		|| '"updated_at": "'|| rtc.updated_at || '", '
+		|| '"status": "'|| rtc.status || '", '
+		|| '"event_type": "'|| rtc.event_type || '", '
+		|| '"parent_buildings": '|| rtc.parent_buildings ||', '
+		|| '"identifiants_ban": '|| rtc.addresses_id ||'}'::json as informations_rnb
+		
+from pbm.rnb_to_calculate rtc 
+join public.gcms_territoire gt 
+  	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
+join public.batiment_rnb_lien_bdtopo brlb
+	on brlb.identifiant_rnb = rtc.rnb_id
+where (rtc.action like 'update' or (rtc.action like 'create' and rtc.event_type like 'reactivation'))
+and ST_DWithin(ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon), brlb.geometrie_enveloppe,1)
+;
+
+--------- création de la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo correspondants à la table rnb_to_calculate
+--------- version TOTALE
+DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_total CASCADE;
+CREATE TABLE processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_total AS 
+select
+	brlb.cleabs,
+	null as gcms_fingerprint,
+	rtc.rnb_id as identifiant_rnb,
+	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
+	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
+	'{"ext_ids": ' || rtc.ext_ids || ', ' 
+		|| '"created_at": "'|| rtc.created_at || '", ' 
+		|| '"updated_at": "'|| rtc.updated_at || '", '
+		|| '"status": "'|| rtc.status || '", '
+		|| '"event_type": "'|| rtc.event_type || '", '
+		|| '"parent_buildings": '|| rtc.parent_buildings ||', '
+		|| '"identifiants_ban": '|| rtc.addresses_id ||'}'::json as informations_rnb
+		
+from pbm.rnb_to_calculate rtc 
+join public.gcms_territoire gt 
+  	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
+join public.batiment_rnb_lien_bdtopo brlb
+	on brlb.identifiant_rnb = rtc.rnb_id
+where rtc.action like 'update' 
 or (rtc.action like 'create' and rtc.event_type like 'reactivation');
+
 
 --------- création de la table DELETE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo 
 --------- de la table rnb_to_calculate qui ont le status DEMOLISHED --
@@ -80,6 +173,9 @@ SELECT
 select count(*) from rnb_test_import_diff rtid 
 
 select count(*) from rnb_to_calculate rtc 
+
+select count(*) from processus_divers.update_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage
+
 
 select count(*) from rnb_stock_import rsi
 
@@ -222,3 +318,16 @@ select *
 
 update pbm.batiment_rnb_lien_bdtopo 
 set gcms_date_creation = now()
+
+
+
+--- export de batiments_rnb_lien_bdtopo correspondant à update_batiment_rnb_lien_bdtopo__moissonnage_geom_diff
+select rnb.identifiant_rnb,rnb.geometrie_enveloppe  from public.batiment_rnb_lien_bdtopo rnb
+join processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage_geom_diff uprnb on rnb.identifiant_rnb = uprnb.identifiant_rnb
+
+
+
+--- ajout d'un champ parent_buildings dans la table rnb_to_calculate (valeur par défaut en attendant que le Python recrée la table)
+alter table pbm.rnb_to_calculate add parent_buildings varchar
+update pbm.rnb_to_calculate set parent_buildings = '["4MM5ZAAKHFCQ", "S8JQZTJCZC3X"]'
+["4MM5ZAAKHFCQ", "S8JQZTJCZC3X"]
