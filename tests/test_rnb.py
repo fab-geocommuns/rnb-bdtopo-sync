@@ -96,22 +96,22 @@ class TestRemoveCalc(unittest.TestCase):
         row = [
             {
                 "rnb_id": "id1",
-                "is_active": 0,
+                "is_active": "0",
                 "status": "constructionProject",
             },
             {
                 "rnb_id": "id2",
-                "is_active": 1,
+                "is_active": "1",
                 "status": "canceledConstructionProject",
             },
             {
                 "rnb_id": "id3",
-                "is_active": 1,
+                "is_active": "1",
                 "status": "demolished",
             },
             {
                 "rnb_id": "id4",
-                "is_active": 0,
+                "is_active": "0",
                 "status": "notUsable",
             },
         ]

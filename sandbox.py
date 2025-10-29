@@ -3,10 +3,12 @@ import csv
 
 from rnb import getDiff_RNB_from_file, rnb_get_most_recent
 
-filename = "data/rnb_diff_2024-05-01.csv"
-rnb_diff = getDiff_RNB_from_file(filename)
-last_changes = rnb_get_most_recent(rnb_diff)
+filename = "data/diff_2025-06-01.csv"
 
-all_status = [row["status"] for row in last_changes]
+with open(filename, "r") as f:
+    reader = csv.DictReader(f)
 
-print(Counter(all_status))
+    data = list(reader)
+
+    print(data[0]["is_active"])
+    print(type(data[0]["is_active"]))
