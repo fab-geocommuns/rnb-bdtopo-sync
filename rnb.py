@@ -59,9 +59,9 @@ def extract_start_date(sys_period_str):
 def rnb_get_most_recent(liste_batiments: Iterable[dict[str, str]]):
 
     result = {}
-    
+
     for bdg in liste_batiments:
-        
+
         bdg["updated_at"] = extract_start_date(bdg["sys_period"])
 
         if bdg["rnb_id"] not in result:
@@ -94,7 +94,7 @@ def calc_to_remove(rnb_diff) -> set:
         # on veut casser les liens (ajouter à to_remove) si le batiment est inactif (is_active=0)
         # ou a un statut constructionProject ou canceledConstructionProject
 
-        if batiment_rnb["is_active"] == '0' or batiment_rnb["status"] in [
+        if batiment_rnb["is_active"] == "0" or batiment_rnb["status"] in [
             "constructionProject",
             "canceledConstructionProject",
         ]:
