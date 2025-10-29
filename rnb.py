@@ -94,7 +94,7 @@ def calc_to_remove(rnb_diff) -> set:
         # on veut casser les liens (ajouter à to_remove) si le batiment est inactif (is_active=0)
         # ou a un statut constructionProject ou canceledConstructionProject
 
-        if batiment_rnb["is_active"] == 0 or batiment_rnb["status"] in [
+        if batiment_rnb["is_active"] == "0" or batiment_rnb["status"] in [
             "constructionProject",
             "canceledConstructionProject",
         ]:
