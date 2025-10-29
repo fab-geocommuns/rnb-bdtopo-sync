@@ -110,6 +110,7 @@ sql = """\
     """.format(
     aujourd_hui
 )
+
 pbm_tryexecute(sql)
 
 

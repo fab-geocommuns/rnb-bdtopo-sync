@@ -168,6 +168,8 @@ def _create_last_changes_table(table_creation_date):
         """
         cursor.execute(create_sql, {"table_creation_date": table_creation_date})
 
+        cursor.commit()
+
 
 def _insert_last_changes(last_changes):
 
@@ -191,4 +193,42 @@ def _insert_last_changes(last_changes):
 
 def persist_to_remove(to_remove, table_creation_date: str):
 
-    pass
+    _create_to_remove_table(table_creation_date)
+    _insert_to_remove(to_remove)
+
+
+def _create_to_remove_table(table_creation_date):
+
+    with get_cursor() as cursor:
+
+        cursor.execute("DROP TABLE IF EXISTS pbm.rnb_to_remove cascade;")
+
+        create_sql = """\
+    CREATE TABLE IF NOT EXISTS pbm.rnb_to_remove (rnb_id varchar NULL);\
+	CREATE UNIQUE INDEX "pbm_rnb_to_remove_rnb_id_pkey" ON pbm.rnb_to_remove USING btree (rnb_id);\
+    GRANT SELECT ON pbm.rnb_to_remove TO invite;\
+    COMMENT ON TABLE pbm.rnb_to_remove IS 'Ne pas supprimer - %(table_creation_date)s';
+    """
+
+        cursor.execute(create_sql, {"table_creation_date": table_creation_date})
+        cursor.commit()
+
+
+def _insert_to_remove(to_remove: set):
+
+    # convert to_remove to an in-memory csv
+    # then use COPY
+
+    to_remove_csv = io.StringIO()
+    writer = csv.writer(to_remove_csv)
+    for rnb_id in to_remove:
+        writer.writerow([rnb_id])
+    to_remove_csv.seek(0)
+
+    with get_cursor() as cursor:
+        cursor.copy_from(
+            to_remove_csv,
+            "pbm.rnb_to_remove",
+            sep=",",
+            columns=["rnb_id"],
+        )
