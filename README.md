@@ -61,5 +61,5 @@ source .venv/bin/activate
 # Déclencher les tests
 
 ```shell
-python -m unittest discover
+ENV_FILE=.env.tests  python -m unittest discover
 ```
