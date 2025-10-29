@@ -1,4 +1,5 @@
 import os
+import psycog2
 from utils import load_env
 
 
@@ -19,4 +20,10 @@ def get_cursor():
 
     params = _get_conn_params()
 
-    pass
+    conn = psycog2.connect(**params)
+    try:
+        with conn:
+            with conn.cursos() as cursor:
+                yield cursor
+    finally:
+        conn.close()
