@@ -1,5 +1,6 @@
- CREATE TABLE public.rnb_unittest_batiment_rnb (
-    cleabs varchar(24) NOT NULL,
+ 
+CREATE TABLE public.batiment_rnb_lien_bdtopo (
+	cleabs varchar(24) NOT NULL,
 	identifiant_rnb varchar NULL,
 	liens_vers_batiment varchar NULL,
 	informations_rnb varchar NULL,
@@ -20,20 +21,22 @@
 	traitement varchar NULL,
 	gcvs_nom_lot varchar NULL,
 	geometrie public.geometry(point) NOT NULL,
-	CONSTRAINT rnb_unittest_batiment_rnb_pkey PRIMARY KEY (cleabs),
+	status varchar NULL,
+	event_type varchar NULL,
+	parent_buildings jsonb NULL,
+	CONSTRAINT batiment_rnb_lien_bdtopo_pkey PRIMARY KEY (cleabs),
 	CONSTRAINT enforce_srid_empreinte CHECK ((st_srid(gcvs_empreinte) = 0)),
 	CONSTRAINT enforce_srid_geometrie CHECK ((st_srid(geometrie) = 0))
 );
+CREATE INDEX batiment_rnb_lien_bdtopo_gcms_numrec_idx ON public.batiment_rnb_lien_bdtopo USING btree (gcms_numrec);
+CREATE INDEX batiment_rnb_lien_bdtopo_gcms_territoire_idx ON public.batiment_rnb_lien_bdtopo USING btree (gcms_territoire);
+CREATE INDEX batiment_rnb_lien_bdtopo_gcvs_empreinte_idx ON public.batiment_rnb_lien_bdtopo USING gist (gcvs_empreinte);
+CREATE INDEX batiment_rnb_lien_bdtopo_geometrie_idx ON public.batiment_rnb_lien_bdtopo USING gist (geometrie);
+CREATE UNIQUE INDEX batiment_rnb_lien_bdtopo_identifiant_rnb_gcms_numrec_idx ON public.batiment_rnb_lien_bdtopo USING btree (identifiant_rnb, gcms_numrec);
+CREATE UNIQUE INDEX batiment_rnb_lien_bdtopo_identifiant_rnb_idx ON public.batiment_rnb_lien_bdtopo USING btree (identifiant_rnb);
+CREATE INDEX batiment_rnb_lien_bdtopo_liens_vers_batiment_idx ON public.batiment_rnb_lien_bdtopo USING btree (liens_vers_batiment);
 
-CREATE INDEX rnb_unittest_batiment_rnb_gcms_numrec_idx ON public.rnb_unittest_batiment_rnb USING btree (gcms_numrec);
-CREATE INDEX rnb_unittest_batiment_rnb_gcms_territoire_idx ON public.rnb_unittest_batiment_rnb USING btree (gcms_territoire);
-CREATE INDEX rnb_unittest_batiment_rnb_gcvs_empreinte_idx ON public.rnb_unittest_batiment_rnb USING gist (gcvs_empreinte);
-CREATE INDEX rnb_unittest_batiment_rnb_geometrie_idx ON public.rnb_unittest_batiment_rnb USING gist (geometrie);
-CREATE UNIQUE INDEX rnb_unittest_batiment_rnb_identifiant_rnb_gcms_numrec_idx ON public.rnb_unittest_batiment_rnb USING btree (identifiant_rnb, gcms_numrec);
-CREATE UNIQUE INDEX rnb_unittest_batiment_rnb_identifiant_rnb_idx ON public.rnb_unittest_batiment_rnb USING btree (identifiant_rnb);
-CREATE INDEX rnb_unittest_batiment_rnb_liens_vers_batiment_idx ON public.rnb_unittest_batiment_rnb USING btree (liens_vers_batiment);
-
-COPY rnb_unittest_batiment_rnb
+COPY batiment_rnb_lien_bdtopo
 FROM '/docker-entrypoint-initdb.d/rnb_unittest_batiment_rnb.csv'
 DELIMITER ','
 CSV HEADER;
