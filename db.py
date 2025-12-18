@@ -1,6 +1,10 @@
 import os
 import psycopg2
+from contextlib import contextmanager
 from utils import load_env
+
+
+SCHEMA_NAME = "processus_divers"
 
 
 def _get_conn_params() -> dict:
@@ -16,6 +20,7 @@ def _get_conn_params() -> dict:
     }
 
 
+@contextmanager
 def get_cursor():
 
     params = _get_conn_params()

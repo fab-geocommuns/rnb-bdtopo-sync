@@ -4,7 +4,7 @@ import re
 import requests
 from datetime import datetime
 from typing import Iterator, Iterable
-from db import get_cursor
+from db import get_cursor, SCHEMA_NAME
 
 
 def getDiff_RNB_from_file(filename: str) -> Iterator[dict[str, str]]:
@@ -136,7 +136,21 @@ def remodel_rnb_to_last_changes(batiments_rnb_last_changes):
     return batiments_rnb_last_changes_remodeled
 
 
+def setup_db():
+    with get_cursor() as cursor:
+        cursor.execute(f"CREATE EXTENSION IF NOT EXISTS postgis;")
+        cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME};")
+
+        # create role invite if not exists
+        cursor.execute(
+            f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
+        )
+
+
 def persist_last_changes(last_changes, table_creation_date: str):
+
+    print("Remodeling RNB last changes ...")
+    print(table_creation_date)
 
     _create_last_changes_table(table_creation_date)
     _insert_last_changes(last_changes)
@@ -146,10 +160,10 @@ def _create_last_changes_table(table_creation_date):
 
     with get_cursor() as cursor:
 
-        cursor.execute("DROP TABLE IF EXISTS pbm.rnb_last_changes cascade")
+        cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_last_changes cascade")
 
-        create_sql = """\
-        CREATE TABLE IF NOT EXISTS pbm.rnb_last_changes (action varchar NULL,\
+        create_sql = f"""\
+        CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.rnb_last_changes (action varchar NULL,\
             rnb_id varchar NULL,\
             status varchar NULL,\
             sys_period varchar NULL,\
@@ -160,15 +174,16 @@ def _create_last_changes_table(table_creation_date):
             created_at varchar NULL,\
             updated_at varchar NULL,\
             event_type varchar NULL);\
-        CREATE UNIQUE INDEX "pbm_rnb_last_changes_rnb_id_pkey" ON pbm.rnb_last_changes USING btree (rnb_id);\
-        CREATE INDEX "pbm_rnb_last_changes_POINT_idx" ON pbm.rnb_last_changes USING gist (point);\
-        GRANT SELECT ON pbm.rnb_last_changes TO invite;\
-        CREATE INDEX pbm_rnb_last_changes_shape_idx ON pbm.rnb_last_changes USING gist (shape);\
-        COMMENT ON TABLE pbm.rnb_last_changes IS 'Ne pas supprimer - %(table_creation_date)s';\
+        CREATE UNIQUE INDEX "{SCHEMA_NAME}_rnb_last_changes_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_last_changes USING btree (rnb_id);\
+        CREATE INDEX "{SCHEMA_NAME}_rnb_last_changes_POINT_idx" ON {SCHEMA_NAME}.rnb_last_changes USING gist (point);\
+        GRANT SELECT ON {SCHEMA_NAME}.rnb_last_changes TO invite;\
+        CREATE INDEX {SCHEMA_NAME}_rnb_last_changes_shape_idx ON {SCHEMA_NAME}.rnb_last_changes USING gist (shape);\
+        COMMENT ON TABLE {SCHEMA_NAME}.rnb_last_changes IS %(table_creationc_comment)s;\
         """
-        cursor.execute(create_sql, {"table_creation_date": table_creation_date})
-
-        cursor.commit()
+        cursor.execute(
+            create_sql,
+            {"table_creationc_comment": f"Ne pas supprimer - {table_creation_date}"},
+        )
 
 
 def _insert_last_changes(last_changes):
@@ -185,7 +200,7 @@ def _insert_last_changes(last_changes):
     with get_cursor() as cursor:
         cursor.copy_from(
             last_changes_csv,
-            "pbm.rnb_last_changes",
+            f"{SCHEMA_NAME}.rnb_last_changes",
             sep=",",
             columns=last_changes[0].keys(),
         )
@@ -201,17 +216,16 @@ def _create_to_remove_table(table_creation_date):
 
     with get_cursor() as cursor:
 
-        cursor.execute("DROP TABLE IF EXISTS pbm.rnb_to_remove cascade;")
+        cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_to_remove cascade;")
 
-        create_sql = """\
-    CREATE TABLE IF NOT EXISTS pbm.rnb_to_remove (rnb_id varchar NULL);\
-	CREATE UNIQUE INDEX "pbm_rnb_to_remove_rnb_id_pkey" ON pbm.rnb_to_remove USING btree (rnb_id);\
-    GRANT SELECT ON pbm.rnb_to_remove TO invite;\
-    COMMENT ON TABLE pbm.rnb_to_remove IS 'Ne pas supprimer - %(table_creation_date)s';
+        create_sql = f"""\
+    CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.rnb_to_remove (rnb_id varchar NULL);\
+	CREATE UNIQUE INDEX "{SCHEMA_NAME}_rnb_to_remove_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_to_remove USING btree (rnb_id);\
+    GRANT SELECT ON {SCHEMA_NAME}.rnb_to_remove TO invite;\
+    COMMENT ON TABLE {SCHEMA_NAME}.rnb_to_remove IS 'Ne pas supprimer - %(table_creation_date)s';
     """
 
         cursor.execute(create_sql, {"table_creation_date": table_creation_date})
-        cursor.commit()
 
 
 def _insert_to_remove(to_remove: set):
@@ -228,7 +242,7 @@ def _insert_to_remove(to_remove: set):
     with get_cursor() as cursor:
         cursor.copy_from(
             to_remove_csv,
-            "pbm.rnb_to_remove",
+            f"{SCHEMA_NAME}.rnb_to_remove",
             sep=",",
             columns=["rnb_id"],
         )

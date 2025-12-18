@@ -6,6 +6,8 @@ from rnb import (
     rnb_get_most_recent,
     calc_to_remove,
     persist_last_changes,
+    persist_to_remove,
+    setup_db,
 )
 
 
@@ -32,17 +34,19 @@ def _handle_rnb_diff(diff):
 
     today = datetime.now().strftime("%Y-%m-%d")
 
+    setup_db()
+
     persist_last_changes(last_changes, today)
-    persist_to_remove(last_changes, today)
+    persist_to_remove(to_remove, today)
 
     return last_changes, to_remove
 
 
 if __name__ == "__main__":
 
-    sync_rnb_from_file("data/rnb_diff_2024-05-01.csv")  # 4.2 Go
+    # sync_rnb_from_file("data/rnb_diff_2024-05-01.csv")  # 4.2 Go
     # sync_rnb_from_file("data/diff_2025-01-10.csv")  # 1.4 Go
-    # sync_rnb_from_file("data/diff_2025-06-01.csv")  # 53 Mo
+    sync_rnb_from_file("data/diff_2025-06-01.csv")  # 53 Mo
 
-    # one_week_ago = datetime.now() - timedelta(weeks=1)
-    # sync_rnb(one_week_ago)
+# one_week_ago = datetime.now() - timedelta(weeks=1)
+# sync_rnb(one_week_ago)
