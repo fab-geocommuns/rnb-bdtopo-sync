@@ -136,113 +136,107 @@ def remodel_rnb_to_last_changes(batiments_rnb_last_changes):
     return batiments_rnb_last_changes_remodeled
 
 
-def setup_db():
-    with get_cursor() as cursor:
-        cursor.execute(f"CREATE EXTENSION IF NOT EXISTS postgis;")
-        cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME};")
+def setup_db(cursor):
+    cursor.execute(f"CREATE EXTENSION IF NOT EXISTS postgis;")
+    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME};")
 
-        # create role invite if not exists
-        cursor.execute(
-            f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
-        )
+    # create role invite if not exists
+    cursor.execute(
+        f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
+    )
 
 
-def persist_last_changes(last_changes, table_creation_date: str):
+def persist_last_changes(cursor, last_changes, table_creation_date: str):
 
     print("Remodeling RNB last changes ...")
     print(table_creation_date)
 
-    _create_last_changes_table(table_creation_date)
-    _insert_last_changes(last_changes)
+    _create_last_changes_table(cursor, table_creation_date)
+    _insert_last_changes(cursor, last_changes)
 
 
-def _create_last_changes_table(table_creation_date):
+def _create_last_changes_table(cursor, table_creation_date):
 
-    with get_cursor() as cursor:
+    cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_last_changes cascade")
 
-        cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_last_changes cascade")
-
-        create_sql = f"""\
+    create_sql = f"""\
         CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.rnb_last_changes (action varchar NULL,\
             rnb_id varchar NULL,\
             status varchar NULL,\
+            is_active varchar NULL,\
             sys_period varchar NULL,\
             point public.geometry NULL,\
             shape public.geometry NULL,\
             addresses_id varchar NULL,\
             ext_ids varchar NULL,\
+            parent_buildings varchar NULL,\
+            event_id varchar NULL,\
             created_at varchar NULL,\
             updated_at varchar NULL,\
             event_type varchar NULL);\
-        CREATE UNIQUE INDEX "{SCHEMA_NAME}_rnb_last_changes_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_last_changes USING btree (rnb_id);\
-        CREATE INDEX "{SCHEMA_NAME}_rnb_last_changes_POINT_idx" ON {SCHEMA_NAME}.rnb_last_changes USING gist (point);\
+        CREATE UNIQUE INDEX "rnb_last_changes_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_last_changes USING btree (rnb_id);\
+        CREATE INDEX "rnb_last_changes_POINT_idx" ON {SCHEMA_NAME}.rnb_last_changes USING gist (point);\
         GRANT SELECT ON {SCHEMA_NAME}.rnb_last_changes TO invite;\
-        CREATE INDEX {SCHEMA_NAME}_rnb_last_changes_shape_idx ON {SCHEMA_NAME}.rnb_last_changes USING gist (shape);\
-        COMMENT ON TABLE {SCHEMA_NAME}.rnb_last_changes IS %(table_creationc_comment)s;\
+        CREATE INDEX rnb_last_changes_shape_idx ON {SCHEMA_NAME}.rnb_last_changes USING gist (shape);\
+        COMMENT ON TABLE {SCHEMA_NAME}.rnb_last_changes IS %(table_creation_comment)s;\
         """
-        cursor.execute(
-            create_sql,
-            {"table_creationc_comment": f"Ne pas supprimer - {table_creation_date}"},
-        )
+    cursor.execute(
+        create_sql,
+        {"table_creation_comment": f"Ne pas supprimer - {table_creation_date}"},
+    )
 
 
-def _insert_last_changes(last_changes):
+def _insert_last_changes(cursor, last_changes):
 
     # convert last_changes to an in-memory csv
     # then use COPY
 
     last_changes_csv = io.StringIO()
-    writer = csv.DictWriter(last_changes_csv, fieldnames=last_changes[0].keys())
+    fieldnames = last_changes[0].keys()
+    writer = csv.DictWriter(last_changes_csv, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(last_changes)
     last_changes_csv.seek(0)
 
-    with get_cursor() as cursor:
-        cursor.copy_from(
-            last_changes_csv,
-            f"{SCHEMA_NAME}.rnb_last_changes",
-            sep=",",
-            columns=last_changes[0].keys(),
-        )
+    copy_sql = f"COPY {SCHEMA_NAME}.rnb_last_changes ({', '.join(fieldnames)}) FROM STDIN WITH CSV HEADER"
+    cursor.copy_expert(copy_sql, last_changes_csv)
 
 
-def persist_to_remove(to_remove, table_creation_date: str):
+def persist_to_remove(cursor, to_remove, table_creation_date: str):
 
-    _create_to_remove_table(table_creation_date)
-    _insert_to_remove(to_remove)
+    _create_to_remove_table(cursor, table_creation_date)
+    _insert_to_remove(cursor, to_remove)
 
 
-def _create_to_remove_table(table_creation_date):
+def _create_to_remove_table(cursor, table_creation_date):
 
-    with get_cursor() as cursor:
+    cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_to_remove cascade;")
 
-        cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_to_remove cascade;")
-
-        create_sql = f"""\
+    create_sql = f"""\
     CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.rnb_to_remove (rnb_id varchar NULL);\
-	CREATE UNIQUE INDEX "{SCHEMA_NAME}_rnb_to_remove_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_to_remove USING btree (rnb_id);\
+	CREATE UNIQUE INDEX "rnb_to_remove_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_to_remove USING btree (rnb_id);\
     GRANT SELECT ON {SCHEMA_NAME}.rnb_to_remove TO invite;\
-    COMMENT ON TABLE {SCHEMA_NAME}.rnb_to_remove IS 'Ne pas supprimer - %(table_creation_date)s';
+    COMMENT ON TABLE {SCHEMA_NAME}.rnb_to_remove IS %(table_creation_comment)s;
     """
 
-        cursor.execute(create_sql, {"table_creation_date": table_creation_date})
+    cursor.execute(
+        create_sql, {"table_creation_comment": f"Ne pas supprimer - {table_creation_date}"}
+    )
 
 
-def _insert_to_remove(to_remove: set):
+def _insert_to_remove(cursor, to_remove: set):
 
     # convert to_remove to an in-memory csv
     # then use COPY
 
     to_remove_csv = io.StringIO()
     writer = csv.writer(to_remove_csv)
+    # No header for this one as it's a single column and we don't have fieldnames in DictWriter style here
+    # Actually, let's keep it simple or use HEADER to be consistent.
+    # _insert_last_changes uses HEADER.
     for rnb_id in to_remove:
         writer.writerow([rnb_id])
     to_remove_csv.seek(0)
 
-    with get_cursor() as cursor:
-        cursor.copy_from(
-            to_remove_csv,
-            f"{SCHEMA_NAME}.rnb_to_remove",
-            sep=",",
-            columns=["rnb_id"],
-        )
+    copy_sql = f"COPY {SCHEMA_NAME}.rnb_to_remove (rnb_id) FROM STDIN WITH CSV"
+    cursor.copy_expert(copy_sql, to_remove_csv)
