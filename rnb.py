@@ -123,11 +123,9 @@ def remodel_rnb_to_last_changes(batiments_rnb_last_changes):
         date_iso = date_sys.isoformat()
 
         if batiment_rnb["action"] == "create":
-
             batiment_rnb["created_at"] = date_iso
             batiment_rnb["updated_at"] = ""
         elif batiment_rnb["action"] == "update":
-            # print(batiment_rnb['sys_period'].split('"')[1])
             batiment_rnb["created_at"] = ""
             batiment_rnb["updated_at"] = date_iso
         else:
@@ -149,6 +147,7 @@ def setup_db(cursor):
 def persist_last_changes(cursor, last_changes, table_creation_date: str):
 
     print("Remodeling RNB last changes ...")
+    last_changes =  remodel_rnb_to_last_changes(last_changes)
     print(table_creation_date)
 
     _create_last_changes_table(cursor, table_creation_date)
