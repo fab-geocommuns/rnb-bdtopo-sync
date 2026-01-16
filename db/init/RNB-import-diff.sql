@@ -26,7 +26,7 @@ END;
 
 $function$
 ;
-
+------------------------------------------------------------------------------------
 
 -- fonction pour générer la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo
 --------- version pour les bâtiments qui ont changé de géometrie
@@ -50,17 +50,20 @@ select
 	rtc.rnb_id as identifiant_rnb,
 	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
 	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
-	'{"ext_ids": ' || rtc.ext_ids || ', ' 
-		|| '"created_at": "'|| rtc.created_at || '", ' 
-		|| '"updated_at": "'|| rtc.updated_at || '", '
-		|| '"identifiants_ban": '|| rtc.addresses_id ||'}' as informations_rnb,
+	'{"ext_ids": ' || COALESCE(rtc.ext_ids,'') || ', ' 
+		|| '"created_at": "'|| COALESCE(rtc.created_at,'') || '", ' 
+		|| '"updated_at": "'|| COALESCE(rtc.updated_at,'')|| '", '
+		|| '"identifiants_ban": '|| COALESCE(rtc.addresses_id,'') ||'}' as informations_rnb,
+	rtc.status,
+	rtc.event_type,
+	rtc.parent_buildings,
 	CASE 
 		WHEN not ST_DWithin(ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon), brlb.geometrie_enveloppe,1)
 			THEN 'to_link' 
 		ELSE ''
 	END AS commentaire_centralise
 
-from pbm.rnb_to_calculate rtc 
+from processus_divers.rnb_last_changes rtc 
 join public.gcms_territoire gt 
   	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
 join public.batiment_rnb_lien_bdtopo brlb
@@ -74,6 +77,7 @@ END;
 
 $function$
 ;
+---------------------------------------------------------------------------------------
 
 -- fonction pour générer la table DELETE recserveur pour supprimer les objets batiment_rnb_lien_bdtopo
 -- pour les bâtiments qui ont le status DEMOLISHED --
@@ -95,7 +99,7 @@ select
 	brlb.cleabs,
 	null as gcms_fingerprint
 	
-from pbm.rnb_to_calculate rtc 
+from processus_divers.rnb_last_changes rtc 
 
 join public.batiment_rnb_lien_bdtopo brlb
 	on brlb.identifiant_rnb = rtc.rnb_id
@@ -108,7 +112,7 @@ END;
 
 $function$
 ;
-
+-------------------------------------------------------------
 
 -- fonction pour générer la table INSERT recserveur pour ajouter les objets de la table 
 -- rnb_last_changes qui ne sont pas déjà dans batiment_rnb_lien_bdtopo
@@ -131,11 +135,15 @@ select
 	rtc.rnb_id as identifiant_rnb,
 	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
 	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
-	'{"ext_ids": ' || rtc.ext_ids || ', ' || '"created_at": "'|| rtc.created_at || '", ' || '"updated_at": "'|| rtc.updated_at || '", ' || '"identifiants_ban": ' || rtc.addresses_id ||'}' as informations_rnb,
-	rtc.action,
-	rtc.status
+	'{"ext_ids": ' || COALESCE(rtc.ext_ids,'') || ', ' 
+		|| '"created_at": "'|| COALESCE(rtc.created_at,'') || '", ' 
+		|| '"updated_at": "'|| COALESCE(rtc.updated_at,'')|| '", '
+		|| '"identifiants_ban": '|| COALESCE(rtc.addresses_id,'') ||'}' as informations_rnb,
+	rtc.status,
+	rtc.event_type,
+	rtc.parent_buildings
 
-from pbm.rnb_to_calculate rtc 
+from processus_divers.rnb_last_changes rtc 
 join public.gcms_territoire gt 
   	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
 left join public.batiment_rnb_lien_bdtopo brlb
