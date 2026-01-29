@@ -1,4 +1,4 @@
-CREATE SCHEMA processus_divers;
+CREATE SCHEMA IF NOT EXISTS processus_divers;
 
 DROP FUNCTION IF EXISTS processus_divers.rnb_batiment_balcon_et_maj_creation();
 CREATE OR REPLACE FUNCTION processus_divers.rnb_batiment_balcon_et_maj_creation()
