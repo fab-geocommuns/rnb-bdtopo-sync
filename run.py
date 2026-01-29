@@ -16,28 +16,42 @@ def sync_rnb(since: datetime) -> tuple[list, set]:
     # Télécharger le fichier de diff
     rnb_diff = getDiff_RNB_from_date(since)
 
-    return _handle_rnb_diff(rnb_diff)
+    _from_diff_to_db(rnb_diff)
+
+    
 
 
 def sync_rnb_from_file(filename: str) -> tuple[list, set]:
     rnb_diff = getDiff_RNB_from_file(filename)
 
-    return _handle_rnb_diff(rnb_diff)
+    _from_diff_to_db(rnb_diff)
 
 
-def _handle_rnb_diff(diff):
+def _from_diff_to_db(diff):
+    
+    last_changes, to_remove = _convert_rnb_diff(diff)
+
+    # Insert last_changes and to_remove in the database
+    persist_to_remove(to_remove)
+
+    
+
+    
+
+
+def _convert_rnb_diff(diff):
     last_changes = rnb_get_most_recent(diff)
 
     to_remove = calc_to_remove(last_changes)
 
     today = datetime.now().strftime("%Y-%m-%d")
 
-    with get_connection() as conn:
-        with get_cursor(conn) as cursor:
-            setup_db(cursor)
+    # with get_connection() as conn:
+    #     with get_cursor(conn) as cursor:
+    #         setup_db(cursor)
 
-            persist_last_changes(cursor, last_changes, today)
-            persist_to_remove(cursor, to_remove, today)
+    #         persist_last_changes(cursor, last_changes, today)
+    #         persist_to_remove(cursor, to_remove, today)
 
     return last_changes, to_remove
 

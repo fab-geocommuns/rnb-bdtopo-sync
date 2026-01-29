@@ -41,3 +41,25 @@ def get_cursor(conn=None):
         with conn:
             with conn.cursor() as cursor:
                 yield cursor
+
+
+
+def setup_db():
+
+    with get_connection() as conn:
+        with get_cursor(conn) as cursor:
+
+            # Create schemas (execute the init-schemas.sql file)
+            cursor.execute(open("db/init/init-schemas.sql", "r").read())
+
+            # Create extensions (execute the init-extensions.sql file)
+            cursor.execute(open("db/init/init-extensions.sql", "r").read())
+
+
+
+    
+
+    # # create role invite if not exists
+    # cursor.execute(
+    #     f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
+    # )

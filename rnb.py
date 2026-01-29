@@ -134,14 +134,6 @@ def remodel_rnb_to_last_changes(batiments_rnb_last_changes):
     return batiments_rnb_last_changes_remodeled
 
 
-def setup_db(cursor):
-    cursor.execute(f"CREATE EXTENSION IF NOT EXISTS postgis;")
-    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME};")
-
-    # create role invite if not exists
-    cursor.execute(
-        f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
-    )
 
 
 def persist_last_changes(cursor, last_changes, table_creation_date: str):

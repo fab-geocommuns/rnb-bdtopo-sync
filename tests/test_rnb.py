@@ -34,7 +34,7 @@ class TestParseSysperiod(unittest.TestCase):
 
 class TestDiffSorting(unittest.TestCase):
 
-    def test_simple(self):
+    def test_rnb_get_most_recent(self):
 
         def iter_rows():
             rows = [
