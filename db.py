@@ -1,10 +1,9 @@
+import datetime
 import os
 import psycopg2
 from contextlib import contextmanager
 from utils import load_env
-
-
-SCHEMA_NAME = "processus_divers"
+from datetime import datetime
 
 
 def _get_conn_params() -> dict:
@@ -48,6 +47,8 @@ def setup_db():
     with get_connection() as conn:
         with get_cursor(conn) as cursor:
 
+            _drop_tables(cursor)
+
             # Create schemas (execute the init-schemas.sql file)
             cursor.execute(open("db/init/init-schemas.sql", "r").read())
 
@@ -60,7 +61,89 @@ def setup_db():
             # Create functions (execute the init-functions.sql file)
             cursor.execute(open("db/init/init-functions.sql", "r").read())
 
+            today = datetime.now().strftime("%Y-%m-%d")
+
+            _create_to_remove_table(cursor, today)
+            _create_last_changes_table(cursor, today)
+
     # # create role invite if not exists
     # cursor.execute(
     #     f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
     # )
+
+
+def _create_to_remove_table(cursor, table_creation_date):
+
+    cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_to_remove cascade;")
+
+    create_sql = f"""\
+    CREATE TABLE IF NOT EXISTS processus_divers.rnb_to_remove (rnb_id varchar NULL);\
+	CREATE UNIQUE INDEX "rnb_to_remove_rnb_id_pkey" ON processus_divers.rnb_to_remove USING btree (rnb_id);\
+    GRANT SELECT ON processus_divers.rnb_to_remove TO invite;\
+    COMMENT ON TABLE processus_divers.rnb_to_remove IS %(table_creation_comment)s;
+    """
+
+    cursor.execute(
+        create_sql,
+        {"table_creation_comment": f"Ne pas supprimer - {table_creation_date}"},
+    )
+
+
+def _create_last_changes_table(cursor, table_creation_date):
+
+    cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_last_changes cascade")
+
+    create_sql = f"""\
+        CREATE TABLE IF NOT EXISTS processus_divers.rnb_last_changes (action varchar NULL,\
+            rnb_id varchar NULL,\
+            status varchar NULL,\
+            is_active varchar NULL,\
+            sys_period varchar NULL,\
+            point public.geometry NULL,\
+            shape public.geometry NULL,\
+            addresses_id varchar NULL,\
+            ext_ids varchar NULL,\
+            parent_buildings varchar NULL,\
+            event_id varchar NULL,\
+            created_at varchar NULL,\
+            updated_at varchar NULL,\
+            event_type varchar NULL);\
+        CREATE UNIQUE INDEX "rnb_last_changes_rnb_id_pkey" ON processus_divers.rnb_last_changes USING btree (rnb_id);\
+        CREATE INDEX "rnb_last_changes_POINT_idx" ON processus_divers.rnb_last_changes USING gist (point);\
+        GRANT SELECT ON processus_divers.rnb_last_changes TO invite;\
+        CREATE INDEX rnb_last_changes_shape_idx ON processus_divers.rnb_last_changes USING gist (shape);\
+        COMMENT ON TABLE processus_divers.rnb_last_changes IS %(table_creation_comment)s;\
+        """
+    cursor.execute(
+        create_sql,
+        {"table_creation_comment": f"Ne pas supprimer - {table_creation_date}"},
+    )
+
+
+def _drop_tables(cursor):
+
+    tables_to_drop = [
+        "processus_divers.rnb_to_remove",
+        "processus_divers.rnb_last_changes",
+        "processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_deactivation",
+    ]
+
+    for table in tables_to_drop:
+        cursor.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
+
+
+def dictfetchall(cursor, query, params=None):
+    cursor.execute(query, params)
+    cols = [col[0] for col in cursor.description]
+    return [dict(zip(cols, row)) for row in cursor.fetchall()]
+
+
+def load_test_data():
+    with get_connection() as conn:
+        with get_cursor(conn) as cursor:
+
+            with open("db/init/rnb_unittest_batiment_rnb.csv", "r") as f:
+                cursor.copy_expert(
+                    "COPY public.batiment_rnb_lien_bdtopo FROM STDIN WITH CSV HEADER",
+                    f,
+                )

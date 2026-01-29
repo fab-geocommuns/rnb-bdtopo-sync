@@ -4,7 +4,6 @@ import re
 import requests
 from datetime import datetime
 from typing import Iterator, Iterable
-from db import get_cursor, SCHEMA_NAME
 
 
 def getDiff_RNB_from_file(filename: str) -> Iterator[dict[str, str]]:
@@ -134,47 +133,13 @@ def remodel_rnb_to_last_changes(batiments_rnb_last_changes):
     return batiments_rnb_last_changes_remodeled
 
 
-
-
 def persist_last_changes(cursor, last_changes, table_creation_date: str):
 
     print("Remodeling RNB last changes ...")
-    last_changes =  remodel_rnb_to_last_changes(last_changes)
+    last_changes = remodel_rnb_to_last_changes(last_changes)
     print(table_creation_date)
 
-    _create_last_changes_table(cursor, table_creation_date)
     _insert_last_changes(cursor, last_changes)
-
-
-def _create_last_changes_table(cursor, table_creation_date):
-
-    cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_last_changes cascade")
-
-    create_sql = f"""\
-        CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.rnb_last_changes (action varchar NULL,\
-            rnb_id varchar NULL,\
-            status varchar NULL,\
-            is_active varchar NULL,\
-            sys_period varchar NULL,\
-            point public.geometry NULL,\
-            shape public.geometry NULL,\
-            addresses_id varchar NULL,\
-            ext_ids varchar NULL,\
-            parent_buildings varchar NULL,\
-            event_id varchar NULL,\
-            created_at varchar NULL,\
-            updated_at varchar NULL,\
-            event_type varchar NULL);\
-        CREATE UNIQUE INDEX "rnb_last_changes_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_last_changes USING btree (rnb_id);\
-        CREATE INDEX "rnb_last_changes_POINT_idx" ON {SCHEMA_NAME}.rnb_last_changes USING gist (point);\
-        GRANT SELECT ON {SCHEMA_NAME}.rnb_last_changes TO invite;\
-        CREATE INDEX rnb_last_changes_shape_idx ON {SCHEMA_NAME}.rnb_last_changes USING gist (shape);\
-        COMMENT ON TABLE {SCHEMA_NAME}.rnb_last_changes IS %(table_creation_comment)s;\
-        """
-    cursor.execute(
-        create_sql,
-        {"table_creation_comment": f"Ne pas supprimer - {table_creation_date}"},
-    )
 
 
 def _insert_last_changes(cursor, last_changes):
@@ -193,29 +158,7 @@ def _insert_last_changes(cursor, last_changes):
     cursor.copy_expert(copy_sql, last_changes_csv)
 
 
-def persist_to_remove(cursor, to_remove, table_creation_date: str):
-
-    _create_to_remove_table(cursor, table_creation_date)
-    _insert_to_remove(cursor, to_remove)
-
-
-def _create_to_remove_table(cursor, table_creation_date):
-
-    cursor.execute(f"DROP TABLE IF EXISTS {SCHEMA_NAME}.rnb_to_remove cascade;")
-
-    create_sql = f"""\
-    CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.rnb_to_remove (rnb_id varchar NULL);\
-	CREATE UNIQUE INDEX "rnb_to_remove_rnb_id_pkey" ON {SCHEMA_NAME}.rnb_to_remove USING btree (rnb_id);\
-    GRANT SELECT ON {SCHEMA_NAME}.rnb_to_remove TO invite;\
-    COMMENT ON TABLE {SCHEMA_NAME}.rnb_to_remove IS %(table_creation_comment)s;
-    """
-
-    cursor.execute(
-        create_sql, {"table_creation_comment": f"Ne pas supprimer - {table_creation_date}"}
-    )
-
-
-def _insert_to_remove(cursor, to_remove: set):
+def persist_to_remove(cursor, to_remove: set):
 
     # convert to_remove to an in-memory csv
     # then use COPY
@@ -229,5 +172,14 @@ def _insert_to_remove(cursor, to_remove: set):
         writer.writerow([rnb_id])
     to_remove_csv.seek(0)
 
-    copy_sql = f"COPY {SCHEMA_NAME}.rnb_to_remove (rnb_id) FROM STDIN WITH CSV"
+    copy_sql = f"COPY processus_divers.rnb_to_remove (rnb_id) FROM STDIN WITH CSV"
     cursor.copy_expert(copy_sql, to_remove_csv)
+
+    # now fille the recserveur table
+    _fill_delete_table(cursor)
+
+
+def _fill_delete_table(cursor):
+
+    # execute rnb_to_remove_to_delete function
+    cursor.execute("SELECT processus_divers.rnb_to_remove_to_delete();")
