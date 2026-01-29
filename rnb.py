@@ -42,16 +42,26 @@ def getDiff_RNB_from_date(since: datetime) -> Iterator[dict[str, str]]:
     return iterate_rows()
 
 
-# todo : est-ce qu'on peut avoir une lecture plus simple ?
-# Fonction pour extraire la date de début de sys_period
-def extract_start_date(sys_period_str):
-    match = re.match(r'\["?([\d\-:\.T+ ]+)', sys_period_str)
+def parse_sys_period(sys_period_str: str) -> tuple[datetime, datetime | None]:
+
+    match = re.match(r'\["?([\d\-:\.T+ ]+)",?"?([\d\-:\.T+ ]+)?"?\)', sys_period_str)
     if match:
-        date_str = match.group(1).replace(" ", "T")
-        if "+00" in date_str and not "+00:00" in date_str:
-            date_str = date_str.replace("+00", "+00:00")
-        return datetime.fromisoformat(date_str)
-    return None
+
+        def _str_to_date(date_str: str) -> datetime:
+            date_str = date_str.replace(" ", "T")
+            if "+00" in date_str and not "+00:00" in date_str:
+                date_str = date_str.replace("+00", "+00:00")
+            return datetime.fromisoformat(date_str)
+
+        # Start date
+        start_date = _str_to_date(match.group(1))
+
+        # End date
+        end_date = _str_to_date(match.group(2)) if match.group(2) else None
+
+        return start_date, end_date
+
+    raise ValueError(f"Invalid sys_period format: {sys_period_str}")
 
 
 # fonction pour trier une liste de batiments et fournir en sortie version la plus récente selon le champ "sys_period"
@@ -62,7 +72,9 @@ def rnb_get_most_recent(liste_batiments: Iterable[dict[str, str]]):
 
     for bdg in liste_batiments:
 
-        bdg["updated_at"] = extract_start_date(bdg["sys_period"])
+        start_date, _ = parse_sys_period(bdg["sys_period"])
+
+        bdg["updated_at"] = start_date
 
         if bdg["rnb_id"] not in result:
             result[bdg["rnb_id"]] = bdg
@@ -103,33 +115,30 @@ def calc_to_remove(rnb_diff) -> set:
     return to_remove
 
 
-"""
----------------------------------------
-Remodelage des attributs des batiments RNB du fichier rnb_last_changes.csv pour calculer les champs created_at et updated_at :
-    ENTREES : 
-        - batiments_rnb_last_changes : liste des batiments correspondant à "last_changes"
-    SORTIES :
-        - batiments_rnb_last_changes_remodeled : liste des batis RNB agrémentés des champs created_at et updated_at
----------------------------------------
-"""
-
-
 def remodel_rnb_to_last_changes(batiments_rnb_last_changes):
+    """
+    ---------------------------------------
+    Remodelage des attributs des batiments RNB du fichier rnb_last_changes.csv pour calculer les champs created_at et updated_at :
+        ENTREES :
+            - batiments_rnb_last_changes : liste des batiments correspondant à "last_changes"
+        SORTIES :
+            - batiments_rnb_last_changes_remodeled : liste des batis RNB agrémentés des champs created_at et updated_at
+    ---------------------------------------
+    """
+
     batiments_rnb_last_changes_remodeled = batiments_rnb_last_changes
 
     for batiment_rnb in batiments_rnb_last_changes_remodeled:
-        date_sys = datetime.fromisoformat(batiment_rnb["sys_period"].split('"')[1])
-        date_iso = date_sys.isoformat()
+
+        start_date, _ = parse_sys_period(batiment_rnb["sys_period"])
+        start_date_iso = start_date.isoformat()
 
         if batiment_rnb["action"] == "create":
-            batiment_rnb["created_at"] = date_iso
+            batiment_rnb["created_at"] = start_date_iso
             batiment_rnb["updated_at"] = ""
-        elif batiment_rnb["action"] == "update":
-            batiment_rnb["created_at"] = ""
-            batiment_rnb["updated_at"] = date_iso
         else:
             batiment_rnb["created_at"] = ""
-            batiment_rnb["updated_at"] = date_iso
+            batiment_rnb["updated_at"] = start_date_iso
     return batiments_rnb_last_changes_remodeled
 
 

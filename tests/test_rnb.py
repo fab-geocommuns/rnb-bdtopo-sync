@@ -2,34 +2,35 @@
 from datetime import datetime
 import unittest
 
-from rnb import extract_start_date, rnb_get_most_recent, calc_to_remove
+from rnb import parse_sys_period, rnb_get_most_recent, calc_to_remove
 
 
 class TestParseSysperiod(unittest.TestCase):
     def test_simple(self):
 
         sys_period = '["2023-12-08 11:44:32.395076+01","2023-12-22 12:52:29.558363+01")'
-        start_date = extract_start_date(sys_period)
+        start_date, end_date = parse_sys_period(sys_period)
 
-        expected = datetime.fromisoformat("2023-12-08 11:44:32.395076+01:00")
+        start_expected = datetime.fromisoformat("2023-12-08 11:44:32.395076+01:00")
+        self.assertEqual(start_date, start_expected)
 
-        self.assertEqual(start_date, expected)
+        end_expected = datetime.fromisoformat("2023-12-22 12:52:29.558363+01:00")
+        self.assertEqual(end_date, end_expected)
 
     def test_just_start(self):
 
         sys_period = '["2023-12-24 17:19:12.971005+01",)'
-        start_date = extract_start_date(sys_period)
+        start_date, end_date = parse_sys_period(sys_period)
 
-        expected = datetime.fromisoformat("2023-12-24 17:19:12.971005+01:00")
+        start_expected = datetime.fromisoformat("2023-12-24 17:19:12.971005+01:00")
+        self.assertEqual(start_date, start_expected)
 
-        self.assertEqual(start_date, expected)
+        self.assertIsNone(end_date)
 
     def test_dummy(self):
 
-        sys_period = "wront_str"
-        start_date = extract_start_date(sys_period)
-
-        self.assertIsNone(start_date)
+        with self.assertRaises(ValueError):
+            _, _ = parse_sys_period("wront_str")
 
 
 class TestDiffSorting(unittest.TestCase):
