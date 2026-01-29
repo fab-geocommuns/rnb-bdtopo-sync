@@ -43,7 +43,6 @@ def get_cursor(conn=None):
                 yield cursor
 
 
-
 def setup_db():
 
     with get_connection() as conn:
@@ -55,9 +54,11 @@ def setup_db():
             # Create extensions (execute the init-extensions.sql file)
             cursor.execute(open("db/init/init-extensions.sql", "r").read())
 
+            # Create tables (execute the init-tables.sql file)
+            cursor.execute(open("db/init/init-tables.sql", "r").read())
 
-
-    
+            # Create functions (execute the init-functions.sql file)
+            cursor.execute(open("db/init/init-functions.sql", "r").read())
 
     # # create role invite if not exists
     # cursor.execute(

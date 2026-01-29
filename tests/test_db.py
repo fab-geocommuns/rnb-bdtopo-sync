@@ -27,13 +27,27 @@ class TestDb(unittest.TestCase):
         with get_connection() as conn:
             with get_cursor(conn) as cursor:
 
+                # Test extensions creation
                 cursor.execute("SELECT extname FROM pg_extension")
                 extensions = cursor.fetchall()
                 self.assertIn("postgis", [ext[0] for ext in extensions])
 
+                # Test schemas creation
                 cursor.execute("SELECT nspname FROM pg_namespace")
                 schemas = cursor.fetchall()
                 self.assertIn("processus_divers", [schema[0] for schema in schemas])
+
+                # Test tables creation
+                cursor.execute(
+                    "SELECT tablename FROM pg_tables WHERE schemaname='public';"
+                )
+                tables = cursor.fetchall()
+                table_names = [table[0] for table in tables]
+                self.assertIn("batiment_rnb_lien_bdtopo", table_names)
+                self.assertIn("batiment", table_names)
+                self.assertIn("staging_batiment_csv", table_names)
+                self.assertIn("batiment_rnb_lien_bdtopo", table_names)
+                self.assertIn("gcms_territoires", table_names)
 
 
 if __name__ == "__main__":

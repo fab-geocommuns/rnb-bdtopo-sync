@@ -36,10 +36,10 @@ CREATE UNIQUE INDEX batiment_rnb_lien_bdtopo_identifiant_rnb_gcms_numrec_idx ON 
 CREATE UNIQUE INDEX batiment_rnb_lien_bdtopo_identifiant_rnb_idx ON public.batiment_rnb_lien_bdtopo USING btree (identifiant_rnb);
 CREATE INDEX batiment_rnb_lien_bdtopo_liens_vers_batiment_idx ON public.batiment_rnb_lien_bdtopo USING btree (liens_vers_batiment);
 
-COPY batiment_rnb_lien_bdtopo
-FROM '/docker-entrypoint-initdb.d/rnb_unittest_batiment_rnb.csv'
-DELIMITER ','
-CSV HEADER;
+-- COPY batiment_rnb_lien_bdtopo
+-- FROM '/docker-entrypoint-initdb.d/rnb_unittest_batiment_rnb.csv'
+-- DELIMITER ','
+-- CSV HEADER;
 
 CREATE TABLE public.batiment (
 	cleabs varchar(24) NOT NULL,
@@ -158,10 +158,10 @@ CREATE TABLE staging_batiment_csv (
 );
 
 
-COPY staging_batiment_csv
-FROM '/docker-entrypoint-initdb.d/batiment_bdtopo_candidats.csv'
-DELIMITER ','
-CSV HEADER;
+-- COPY staging_batiment_csv
+-- FROM '/docker-entrypoint-initdb.d/batiment_bdtopo_candidats.csv'
+-- DELIMITER ','
+-- CSV HEADER;
 
 
 INSERT INTO public.batiment (
