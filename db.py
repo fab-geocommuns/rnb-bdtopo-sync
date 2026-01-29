@@ -142,7 +142,7 @@ def load_test_data():
     with get_connection() as conn:
         with get_cursor(conn) as cursor:
 
-            with open("db/init/rnb_unittest_batiment_rnb.csv", "r") as f:
+            with open("data/test_batiment_rnb_lien_bdtopo.csv", "r") as f:
                 cursor.copy_expert(
                     "COPY public.batiment_rnb_lien_bdtopo FROM STDIN WITH CSV HEADER",
                     f,

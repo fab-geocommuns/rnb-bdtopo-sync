@@ -1,5 +1,5 @@
 import datetime
-from datetime import datetime, timedelta
+from datetime import datetime
 from rnb import (
     getDiff_RNB_from_date,
     getDiff_RNB_from_file,
@@ -7,9 +7,7 @@ from rnb import (
     calc_to_remove,
     persist_last_changes,
     persist_to_remove,
-    setup_db,
 )
-from db import get_cursor, get_connection
 
 
 def sync_rnb(since: datetime) -> tuple[list, set]:
@@ -38,15 +36,6 @@ def _convert_rnb_diff(diff):
     last_changes = rnb_get_most_recent(diff)
 
     to_remove = calc_to_remove(last_changes)
-
-    today = datetime.now().strftime("%Y-%m-%d")
-
-    # with get_connection() as conn:
-    #     with get_cursor(conn) as cursor:
-    #         setup_db(cursor)
-
-    #         persist_last_changes(cursor, last_changes, today)
-    #         persist_to_remove(cursor, to_remove, today)
 
     return last_changes, to_remove
 

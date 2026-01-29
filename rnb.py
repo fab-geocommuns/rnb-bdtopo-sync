@@ -163,7 +163,7 @@ def _insert_last_changes(cursor, last_changes):
     writer.writerows(last_changes)
     last_changes_csv.seek(0)
 
-    copy_sql = f"COPY {SCHEMA_NAME}.rnb_last_changes ({', '.join(fieldnames)}) FROM STDIN WITH CSV HEADER"
+    copy_sql = f"COPY processus_divers.rnb_last_changes ({', '.join(fieldnames)}) FROM STDIN WITH CSV HEADER"
     cursor.copy_expert(copy_sql, last_changes_csv)
 
 
