@@ -167,6 +167,14 @@ def _insert_last_changes(cursor, last_changes):
     cursor.copy_expert(copy_sql, last_changes_csv)
 
 
+def _convert_rnb_diff(diff):
+    last_changes = rnb_get_most_recent(diff)
+
+    to_remove = calc_to_remove(last_changes)
+
+    return last_changes, to_remove
+
+
 def persist_to_remove(cursor, to_remove: set):
 
     # convert to_remove to an in-memory csv

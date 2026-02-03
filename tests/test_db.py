@@ -1,7 +1,12 @@
 import unittest
 from db import _get_conn_params, dictfetchall, setup_db, load_test_data
 from db import get_connection, get_cursor
-from rnb import persist_to_remove
+from rnb import (
+    persist_to_remove,
+    getDiff_RNB_from_file,
+    _convert_rnb_diff,
+    persist_last_changes,
+)
 
 
 class TestDbSetup(unittest.TestCase):
@@ -75,6 +80,55 @@ class TestDbSetup(unittest.TestCase):
             cursor.execute(q)
             rows = cursor.fetchall()
             self.assertEqual(len(rows), 158)
+
+
+class TestLastChangesInsertion(unittest.TestCase):
+
+    def test_insert(self):
+
+        setup_db()
+
+        rnb_diff = getDiff_RNB_from_file("data/test_rnb_diff.csv")
+        last_changes, _ = _convert_rnb_diff(rnb_diff)
+
+        with get_cursor() as cursor:
+
+            persist_last_changes(cursor, last_changes, "2025-06-01")
+
+            q = "SELECT *, ST_AsEWKT(point) as point_wkt, ST_AsEWKT(shape) as shape_wkt FROM processus_divers.rnb_last_changes;"
+
+            in_db = dictfetchall(cursor, q)
+            self.assertEqual(len(in_db), 29)
+
+            checked_row = next(row for row in in_db if row["rnb_id"] == "V8NJNTB7Z34Y")
+
+            self.assertEqual(checked_row["action"], "update")
+            self.assertEqual(checked_row["rnb_id"], "V8NJNTB7Z34Y")
+            self.assertEqual(checked_row["status"], "constructed")
+            self.assertEqual(checked_row["is_active"], "1")
+            self.assertEqual(
+                checked_row["sys_period"], '["2025-06-02 00:01:33.798109+00",)'
+            )
+            self.assertEqual(
+                checked_row["point_wkt"],
+                "SRID=4326;POINT(3.36679232876569 46.573599194397964)",
+            )
+            self.assertEqual(
+                checked_row["shape_wkt"],
+                "SRID=4326;MULTIPOLYGON(((3.3668926965814 46.57346470644805,3.366797265219796 46.57344790369021,3.366692119975701 46.57373368234788,3.366787545740529 46.57374958476431,3.3668926965814 46.57346470644805)))",
+            )
+            self.assertEqual(checked_row["addresses_id"], '["03321_zwwtvb_00006"]')
+            self.assertEqual(
+                checked_row["ext_id"],
+                '[{"id": "bdnb-bc-5A6N-H6FX-ZTBF", "source": "bdnb", "created_at": "2023-12-07T13:28:43.229080+00:00", "source_version": "2023_01"}, {"id": "BATIMENT0000002200520272", "source": "bdtopo", "created_at": "2023-12-22T07:56:45.556905+00:00", "source_version": "bdtopo_2023_09"}]',
+            )
+            self.assertEqual(checked_row["parent_buildin"], "")
+            self.assertEqual(
+                checked_row["event_id"], "c8a78ee0-35e6-4ff5-8885-569ad694c941"
+            )
+            self.assertEqual(checked_row["created_at"], "")
+            self.assertEqual(checked_row["updated_at"], "2025-06-02 00:01:33.798109+00")
+            self.assertEqual(checked_row["event_type"], "update")
 
 
 class TestToRemoveInsertion(unittest.TestCase):

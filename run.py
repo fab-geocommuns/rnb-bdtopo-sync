@@ -3,8 +3,7 @@ from datetime import datetime
 from rnb import (
     getDiff_RNB_from_date,
     getDiff_RNB_from_file,
-    rnb_get_most_recent,
-    calc_to_remove,
+    _convert_rnb_diff,
     persist_last_changes,
     persist_to_remove,
 )
@@ -30,14 +29,6 @@ def _from_diff_to_db(diff):
     # Insert last_changes and to_remove in the database
     persist_to_remove(to_remove)
     persist_last_changes(last_changes)
-
-
-def _convert_rnb_diff(diff):
-    last_changes = rnb_get_most_recent(diff)
-
-    to_remove = calc_to_remove(last_changes)
-
-    return last_changes, to_remove
 
 
 if __name__ == "__main__":
