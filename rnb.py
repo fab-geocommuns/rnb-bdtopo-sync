@@ -102,7 +102,6 @@ def calc_to_remove(rnb_diff) -> set:
 
         seen_rnb_ids.add(batiment_rnb["rnb_id"])
 
-        # todo : est-ce qu'on veut vraiment casser les liens pour ces statuts ?
         # on veut casser les liens (ajouter à to_remove) si le batiment est inactif (is_active=0)
         # ou a un statut constructionProject ou canceledConstructionProject
 
