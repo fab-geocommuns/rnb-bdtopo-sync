@@ -86,6 +86,11 @@ class TestDbSetup(unittest.TestCase):
             rows = cursor.fetchall()
             self.assertEqual(len(rows), 1316)
 
+            q = "SELECT * FROM public.batiment;"
+            cursor.execute(q)
+            rows = cursor.fetchall()
+            self.assertEqual(len(rows), 1316)
+
 
 class TestLastChangesInsertion(unittest.TestCase):
 
@@ -196,14 +201,6 @@ class TestToRemoveInsertion(unittest.TestCase):
                     row["cleabs"],
                     ("BAT_RNB_0000002444588925", "BAT_RNB_0000002444588926"),
                 )
-
-
-class TestMatching(unittest.TestCase):
-
-    def test_matching(self):
-
-        setup_db()
-        load_test_data()
 
 
 if __name__ == "__main__":

@@ -58,6 +58,17 @@ def setup_db():
             # Create tables (execute the init-tables.sql file)
             cursor.execute(open("db/init/init-tables.sql", "r").read())
 
+            # Create roles if they don't exist
+            cursor.execute(
+                "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'pbm') THEN CREATE ROLE pbm; END IF; END $$;"
+            )
+            cursor.execute(
+                "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'recserveur') THEN CREATE ROLE recserveur; END IF; END $$;"
+            )
+            cursor.execute(
+                "DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
+            )
+
             # Create functions (execute the init-functions.sql file)
             cursor.execute(open("db/init/init-functions.sql", "r").read())
 
@@ -65,11 +76,6 @@ def setup_db():
 
             _create_to_remove_table(cursor, today)
             _create_last_changes_table(cursor, today)
-
-    # # create role invite if not exists
-    # cursor.execute(
-    #     f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'invite') THEN CREATE ROLE invite NOINHERIT LOGIN; END IF; END $$;"
-    # )
 
 
 def _create_to_remove_table(cursor, table_creation_date):
@@ -155,3 +161,4 @@ def load_test_data():
                     "COPY public.staging_batiment_csv FROM STDIN WITH CSV HEADER",
                     f,
                 )
+            cursor.execute(open("db/init/load-batiment.sql", "r").read())

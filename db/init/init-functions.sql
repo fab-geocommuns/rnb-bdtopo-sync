@@ -1086,7 +1086,7 @@ SELECT
         rnb.geometrie_enveloppe,
         rnb.informations_rnb::varchar
 FROM
-        pbm.batiment_rnb_lien_bdtopo rnb
+        public.batiment_rnb_lien_bdtopo rnb
 WHERE
         NOT gcms_detruit
         AND (gcms_date_creation >= CURRENT_DATE - INTERVAL '2 days'
@@ -1313,7 +1313,7 @@ FROM (
             t2.cleabs,
             t3.traitement,
             regexp_split_to_table(t2.liens_vers_batiment, '/') AS split_liens
-        FROM pbm.batiment_rnb_lien_bdtopo t2
+        FROM public.batiment_rnb_lien_bdtopo t2
         JOIN processus_divers.rnb_batiments_rnb_traites_creation t3
             ON t2.cleabs = t3.cleabs
         WHERE t3.traitement != 'Bâtiment non apparié, à plus de 20m d''un autre bâtiment BDUni'
