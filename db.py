@@ -142,8 +142,16 @@ def load_test_data():
     with get_connection() as conn:
         with get_cursor(conn) as cursor:
 
+            # RNB lien data
             with open("data/test_batiment_rnb_lien_bdtopo.csv", "r") as f:
                 cursor.copy_expert(
                     "COPY public.batiment_rnb_lien_bdtopo FROM STDIN WITH CSV HEADER",
+                    f,
+                )
+
+            # BD Topo building to match
+            with open("data/test_appariement_bdtopo.csv", "r") as f:
+                cursor.copy_expert(
+                    "COPY public.staging_batiment_csv FROM STDIN WITH CSV HEADER",
                     f,
                 )
