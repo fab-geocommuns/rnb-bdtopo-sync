@@ -50,13 +50,16 @@ def setup_db():
             _drop_tables(cursor)
 
             # Create schemas (execute the init-schemas.sql file)
-            cursor.execute(open("db/init/init-schemas.sql", "r").read())
+            with open("db/init/init-schemas.sql", "r") as f:
+                cursor.execute(f.read())
 
             # Create extensions (execute the init-extensions.sql file)
-            cursor.execute(open("db/init/init-extensions.sql", "r").read())
+            with open("db/init/init-extensions.sql", "r") as f:
+                cursor.execute(f.read())
 
             # Create tables (execute the init-tables.sql file)
-            cursor.execute(open("db/init/init-tables.sql", "r").read())
+            with open("db/init/init-tables.sql", "r") as f:
+                cursor.execute(f.read())
 
             # Create roles if they don't exist
             cursor.execute(
@@ -70,7 +73,8 @@ def setup_db():
             )
 
             # Create functions (execute the init-functions.sql file)
-            cursor.execute(open("db/init/init-functions.sql", "r").read())
+            with open("db/init/init-functions.sql", "r") as f:
+                cursor.execute(f.read())
 
             today = datetime.now().strftime("%Y-%m-%d")
 
@@ -132,6 +136,25 @@ def _drop_tables(cursor):
         "processus_divers.rnb_to_remove",
         "processus_divers.rnb_last_changes",
         "processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_deactivation",
+        # Work tables created by pairing functions
+        "processus_divers.rnb_batiments_rnb_restant_creation",
+        "processus_divers.rnb_batiments_rnb_buffer_creation",
+        "processus_divers.rnb_batiments_bduni_restant_creation",
+        "processus_divers.rnb_batiments_rnb_traites_creation",
+        "processus_divers.rnb_batiments_bduni_traites_creation",
+        "processus_divers.rnb_croisements_creation",
+        "processus_divers.update_batiment_rnb_lien_bdtopo__batiment_rnb_creation",
+        "processus_divers.update_batiment_rnb_lien_bdtopo__batiment_bdtopo_creation",
+        "processus_divers.update_batiment_rnb_lien_bdtopo__batiment_bdtopo_suppr",
+        "processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage",
+        "processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_demolished",
+        "processus_divers.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage",
+        "processus_divers.rnb_fusionnees",
+        "processus_divers.stat_rnb",
+        "processus_divers.batiment_suppr",
+        "processus_divers.lien_rnb_bdtopo",
+        "processus_divers.cleabs_rnb_a_reprendre",
+        "processus_divers.rnb_batiments_bduni_buffer_creation",
     ]
 
     for table in tables_to_drop:
@@ -161,4 +184,5 @@ def load_test_data():
                     "COPY public.staging_batiment_csv FROM STDIN WITH CSV HEADER",
                     f,
                 )
-            cursor.execute(open("db/init/load-batiment.sql", "r").read())
+            with open("db/init/load-batiment.sql", "r") as f:
+                cursor.execute(f.read())

@@ -129,15 +129,15 @@ class TestLastChangesInsertion(unittest.TestCase):
             )
             self.assertEqual(checked_row["addresses_id"], '["03321_zwwtvb_00006"]')
             self.assertEqual(
-                checked_row["ext_id"],
+                checked_row["ext_ids"],
                 '[{"id": "bdnb-bc-5A6N-H6FX-ZTBF", "source": "bdnb", "created_at": "2023-12-07T13:28:43.229080+00:00", "source_version": "2023_01"}, {"id": "BATIMENT0000002200520272", "source": "bdtopo", "created_at": "2023-12-22T07:56:45.556905+00:00", "source_version": "bdtopo_2023_09"}]',
             )
-            self.assertEqual(checked_row["parent_buildin"], "")
+            self.assertIsNone(checked_row["parent_buildings"])
             self.assertEqual(
                 checked_row["event_id"], "c8a78ee0-35e6-4ff5-8885-569ad694c941"
             )
-            self.assertEqual(checked_row["created_at"], "")
-            self.assertEqual(checked_row["updated_at"], "2025-06-02 00:01:33.798109+00")
+            self.assertIsNone(checked_row["created_at"])
+            self.assertEqual(checked_row["updated_at"], "2025-06-02T00:01:33.798109+00:00")
             self.assertEqual(checked_row["event_type"], "update")
 
 
