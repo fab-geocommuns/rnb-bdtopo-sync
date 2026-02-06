@@ -1,0 +1,2 @@
+- always use the virtual environnement, located in .venv/, to run tests and scripts
+- tests use unittest
