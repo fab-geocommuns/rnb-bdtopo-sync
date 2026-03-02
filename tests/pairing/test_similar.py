@@ -239,18 +239,7 @@ class TestSimilar(unittest.TestCase):
 
         run_pairing_after_rnb_update()
 
-        with get_connection() as conn:
-            with get_cursor(conn) as cursor:
-                traites = dictfetchall(
-                    cursor,
-                    """
-                    SELECT traitement
-                    FROM processus_divers.rnb_batiments_rnb_traites_creation
-                    WHERE identifiant_rnb = %s
-                    """,
-                    (rnb_id,),
-                )
-        self.assertEqual(len(traites), 0, "Disjoint building should not be paired at all")
+        self._assert_not_paired_as_similar(rnb_id)
 
     def test_already_paired_by_semantic(self):
         """Test that a building paired semantically does NOT appear again as 'Batiments semblables'."""
