@@ -4,6 +4,26 @@ from pairing import run_pairing_after_rnb_update
 from tests.helpers import create_rnb_building, create_bdtopo_building
 
 
+# WGS84 coordinates near Orléans (dep 45)
+# At lat ~47.9: 10m east ≈ +0.000134° lon, 10m north ≈ +0.000090° lat
+BASE_LON = 1.900000
+BASE_LAT = 47.900000
+
+# Standard ~10x10m house polygon
+HOUSE_10x10 = {
+    "type": "Polygon",
+    "coordinates": [
+        [
+            [BASE_LON, BASE_LAT],
+            [BASE_LON + 0.000134, BASE_LAT],
+            [BASE_LON + 0.000134, BASE_LAT + 0.000090],
+            [BASE_LON, BASE_LAT + 0.000090],
+            [BASE_LON, BASE_LAT],
+        ]
+    ],
+}
+
+
 class TestSemantic(unittest.TestCase):
 
     def setUp(self):
@@ -14,17 +34,12 @@ class TestSemantic(unittest.TestCase):
         """Test semantic pairing when RNB building contains BD TOPO cleabs in ext_ids."""
 
         # Create a BD TOPO building
-        bdtopo_polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
-        bdtopo_cleabs = create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt)
+        bdtopo_cleabs = create_bdtopo_building(polygon_geojson=HOUSE_10x10)
 
         # Create an RNB building with the BD TOPO cleabs in ext_ids
-        rnb_polygon_geojson = {
-            "type": "Polygon",
-            "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]],
-        }
         rnb_identifiant = "RNB_TEST_001"
         create_rnb_building(
-            polygon_geojson=rnb_polygon_geojson,
+            polygon_geojson=HOUSE_10x10,
             identifiant_rnb=rnb_identifiant,
             bdtopo_ids=[bdtopo_cleabs],
         )
@@ -62,19 +77,14 @@ class TestSemantic(unittest.TestCase):
         """Test that no pairing occurs when BD TOPO building is marked as destroyed."""
 
         # Create a BD TOPO building marked as destroyed
-        bdtopo_polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
         bdtopo_cleabs = create_bdtopo_building(
-            polygon_wkt=bdtopo_polygon_wkt, gcms_detruit=True
+            polygon_geojson=HOUSE_10x10, gcms_detruit=True
         )
 
         # Create an RNB building with the destroyed BD TOPO cleabs in ext_ids
-        rnb_polygon_geojson = {
-            "type": "Polygon",
-            "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]],
-        }
         rnb_identifiant = "RNB_TEST_DESTROYED"
         create_rnb_building(
-            polygon_geojson=rnb_polygon_geojson,
+            polygon_geojson=HOUSE_10x10,
             identifiant_rnb=rnb_identifiant,
             bdtopo_ids=[bdtopo_cleabs],
         )
@@ -149,20 +159,51 @@ class TestSemantic(unittest.TestCase):
     def test_multiple_bdtopo_in_ext_ids(self):
         """Test semantic pairing when RNB building has multiple BD TOPO cleabs in ext_ids (1 RNB → N BD TOPO)."""
 
-        # Create multiple BD TOPO buildings
-        bdtopo_polygon_wkt_1 = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
-        bdtopo_cleabs_1 = create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt_1)
+        # Create 3 BD TOPO buildings spaced ~30m apart (within the 100m buffer)
+        bdtopo_cleabs_1 = create_bdtopo_building(polygon_geojson=HOUSE_10x10)
 
-        bdtopo_polygon_wkt_2 = "MULTIPOLYGON Z(((20 0 0, 30 0 0, 30 10 0, 20 10 0, 20 0 0)))"
-        bdtopo_cleabs_2 = create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt_2)
+        bdtopo_cleabs_2 = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [BASE_LON + 0.000402, BASE_LAT],
+                        [BASE_LON + 0.000536, BASE_LAT],
+                        [BASE_LON + 0.000536, BASE_LAT + 0.000090],
+                        [BASE_LON + 0.000402, BASE_LAT + 0.000090],
+                        [BASE_LON + 0.000402, BASE_LAT],
+                    ]
+                ],
+            }
+        )
 
-        bdtopo_polygon_wkt_3 = "MULTIPOLYGON Z(((40 0 0, 50 0 0, 50 10 0, 40 10 0, 40 0 0)))"
-        bdtopo_cleabs_3 = create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt_3)
+        bdtopo_cleabs_3 = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [BASE_LON + 0.000804, BASE_LAT],
+                        [BASE_LON + 0.000938, BASE_LAT],
+                        [BASE_LON + 0.000938, BASE_LAT + 0.000090],
+                        [BASE_LON + 0.000804, BASE_LAT + 0.000090],
+                        [BASE_LON + 0.000804, BASE_LAT],
+                    ]
+                ],
+            }
+        )
 
-        # Create an RNB building with all three BD TOPO cleabs in ext_ids
+        # Create an RNB building covering all three
         rnb_polygon_geojson = {
             "type": "Polygon",
-            "coordinates": [[[0, 0], [50, 0], [50, 10], [0, 10], [0, 0]]],
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000938, BASE_LAT],
+                    [BASE_LON + 0.000938, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
         }
         rnb_identifiant = "RNB_TEST_MULTIPLE"
         create_rnb_building(
@@ -212,17 +253,12 @@ class TestSemantic(unittest.TestCase):
         """Test semantic pairing when only some ext_ids exist (partial matching filters to existing only)."""
 
         # Create only one BD TOPO building
-        bdtopo_polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
-        bdtopo_cleabs = create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt)
+        bdtopo_cleabs = create_bdtopo_building(polygon_geojson=HOUSE_10x10)
 
         # Create an RNB building with three ext_ids, but only one exists
-        rnb_polygon_geojson = {
-            "type": "Polygon",
-            "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]],
-        }
         rnb_identifiant = "RNB_TEST_PARTIAL"
         create_rnb_building(
-            polygon_geojson=rnb_polygon_geojson,
+            polygon_geojson=HOUSE_10x10,
             identifiant_rnb=rnb_identifiant,
             bdtopo_ids=[
                 bdtopo_cleabs,  # This one exists
@@ -264,28 +300,43 @@ class TestSemantic(unittest.TestCase):
         """Test that multiple RNB buildings can point to the same BD TOPO building (N → 1)."""
 
         # Create one BD TOPO building
-        bdtopo_polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
-        bdtopo_cleabs = create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt)
+        bdtopo_cleabs = create_bdtopo_building(polygon_geojson=HOUSE_10x10)
 
         # Create two RNB buildings, both with the same BD TOPO cleabs in ext_ids
-        rnb_polygon_geojson_1 = {
-            "type": "Polygon",
-            "coordinates": [[[0, 0], [5, 0], [5, 5], [0, 5], [0, 0]]],
-        }
+        # RNB 1: ~5x5m in the SW corner of the bdtopo footprint
         rnb_identifiant_1 = "RNB_TEST_N_TO_1_A"
         create_rnb_building(
-            polygon_geojson=rnb_polygon_geojson_1,
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [BASE_LON, BASE_LAT],
+                        [BASE_LON + 0.000067, BASE_LAT],
+                        [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                        [BASE_LON, BASE_LAT + 0.000045],
+                        [BASE_LON, BASE_LAT],
+                    ]
+                ],
+            },
             identifiant_rnb=rnb_identifiant_1,
             bdtopo_ids=[bdtopo_cleabs],
         )
 
-        rnb_polygon_geojson_2 = {
-            "type": "Polygon",
-            "coordinates": [[[5, 5], [10, 5], [10, 10], [5, 10], [5, 5]]],
-        }
+        # RNB 2: ~5x5m in the NE corner of the bdtopo footprint
         rnb_identifiant_2 = "RNB_TEST_N_TO_1_B"
         create_rnb_building(
-            polygon_geojson=rnb_polygon_geojson_2,
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                        [BASE_LON + 0.000134, BASE_LAT + 0.000045],
+                        [BASE_LON + 0.000134, BASE_LAT + 0.000090],
+                        [BASE_LON + 0.000067, BASE_LAT + 0.000090],
+                        [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                    ]
+                ],
+            },
             identifiant_rnb=rnb_identifiant_2,
             bdtopo_ids=[bdtopo_cleabs],
         )
@@ -342,17 +393,12 @@ class TestSemantic(unittest.TestCase):
         """Test that no semantic pairing occurs when ext_ids array is empty."""
 
         # Create a BD TOPO building
-        bdtopo_polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
-        create_bdtopo_building(polygon_wkt=bdtopo_polygon_wkt)
+        create_bdtopo_building(polygon_geojson=HOUSE_10x10)
 
-        # Create an RNB building with empty ext_ids array
-        rnb_polygon_geojson = {
-            "type": "Polygon",
-            "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]],
-        }
+        # Create an RNB building with empty ext_ids array (same geometry)
         rnb_identifiant = "RNB_TEST_EMPTY_EXT_IDS"
         create_rnb_building(
-            polygon_geojson=rnb_polygon_geojson,
+            polygon_geojson=HOUSE_10x10,
             identifiant_rnb=rnb_identifiant,
             bdtopo_ids=[],  # Empty array
         )

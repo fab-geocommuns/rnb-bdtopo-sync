@@ -8,6 +8,12 @@ from db import setup_db, dictfetchall, get_connection, get_cursor
 from tests.helpers import create_rnb_building, create_bdtopo_building
 
 
+# WGS84 coordinates near Orléans (dep 45)
+# At lat ~47.9: 10m east ≈ +0.000134° lon, 10m north ≈ +0.000090° lat
+BASE_LON = 1.900000
+BASE_LAT = 47.900000
+
+
 class TestCreateRnbBuilding(unittest.TestCase):
     """Test the create_rnb_building helper function."""
 
@@ -79,7 +85,7 @@ class TestCreateRnbBuilding(unittest.TestCase):
                 self.assertEqual(building["event_type"], "construction")
                 self.assertFalse(building["gcms_detruit"])
 
-                # Check SRID (should be 0 for local coordinates)
+                # Check SRID (should be 0 — Lambert 93 coordinates with stripped SRID)
                 self.assertEqual(building["srid"], 0)
 
                 # Check informations_rnb JSON structure
@@ -97,8 +103,7 @@ class TestCreateRnbBuilding(unittest.TestCase):
                 self.assertEqual(info_rnb["ext_ids"][1]["id"], "BATIMENT_TEST_002")
                 self.assertEqual(info_rnb["ext_ids"][1]["source"], "bdtopo")
 
-                # Verify geometry was stored correctly
-                # Note: PostGIS may convert Polygon to MultiPolygon based on column type
+                # Verify geometry was stored correctly (projected to Lambert 93)
                 geometry = json.loads(building["geometry_json"])
                 self.assertIn(geometry["type"], ["Polygon", "MultiPolygon"])
                 self.assertIsNotNone(geometry["coordinates"])
@@ -171,19 +176,22 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_with_defaults(self):
         """Test creating a BD TOPO building with default parameters."""
-        # Define a simple MultiPolygon Z in WKT format
-        polygon_wkt = """
-            MULTIPOLYGON Z(((
-                0 0 0,
-                10 0 0,
-                10 10 0,
-                0 10 0,
-                0 0 0
-            )))
-        """
+        # ~10x10m house near Orléans
+        polygon_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000134, BASE_LAT],
+                    [BASE_LON + 0.000134, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
 
         # Create the building with defaults
-        cleabs = create_bdtopo_building(polygon_wkt=polygon_wkt)
+        cleabs = create_bdtopo_building(polygon_geojson=polygon_geojson)
 
         # Verify the building was created
         self.assertIsNotNone(cleabs)
@@ -220,7 +228,7 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
                 self.assertIsNotNone(building["gcms_date_creation"])
                 self.assertIsNone(building["gcms_date_destruction"])
 
-                # Check SRID (should be 0 by default)
+                # Check SRID (should be 0 — Lambert 93 with stripped SRID)
                 self.assertEqual(building["srid"], 0)
 
                 # Check geometry type
@@ -232,12 +240,23 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_with_custom_cleabs(self):
         """Test creating a BD TOPO building with a custom cleabs."""
-        polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 5 0 0, 5 5 0, 0 5 0, 0 0 0)))"
+        polygon_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000067, BASE_LAT],
+                    [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                    [BASE_LON, BASE_LAT + 0.000045],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
         custom_cleabs = "BATIMENT_CUSTOM_12345"
 
         # Create with custom cleabs
         cleabs = create_bdtopo_building(
-            polygon_wkt=polygon_wkt, cleabs=custom_cleabs
+            polygon_geojson=polygon_geojson, cleabs=custom_cleabs
         )
 
         # Verify the custom cleabs was used
@@ -254,12 +273,23 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_destroyed(self):
         """Test creating a destroyed BD TOPO building."""
-        polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 5 0 0, 5 5 0, 0 5 0, 0 0 0)))"
+        polygon_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000067, BASE_LAT],
+                    [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                    [BASE_LON, BASE_LAT + 0.000045],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
         destruction_date = datetime.now() - timedelta(days=5)
 
         # Create a destroyed building
         cleabs = create_bdtopo_building(
-            polygon_wkt=polygon_wkt,
+            polygon_geojson=polygon_geojson,
             gcms_detruit=True,
             gcms_date_destruction=destruction_date,
         )
@@ -291,12 +321,23 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_with_custom_creation_date(self):
         """Test creating a BD TOPO building with custom creation date."""
-        polygon_wkt = "MULTIPOLYGON Z(((0 0 0, 5 0 0, 5 5 0, 0 5 0, 0 0 0)))"
+        polygon_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000067, BASE_LAT],
+                    [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                    [BASE_LON, BASE_LAT + 0.000045],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
         creation_date = datetime.now() - timedelta(days=10)
 
         # Create with custom creation date
         cleabs = create_bdtopo_building(
-            polygon_wkt=polygon_wkt, gcms_date_creation=creation_date
+            polygon_geojson=polygon_geojson, gcms_date_creation=creation_date
         )
 
         # Verify creation date
@@ -318,18 +359,20 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_srid_enforced(self):
         """Test that SRID is enforced to 0 by the database schema."""
-        polygon_wkt = """
-            MULTIPOLYGON Z(((
-                0 0 0,
-                10 0 0,
-                10 10 0,
-                0 10 0,
-                0 0 0
-            )))
-        """
+        polygon_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000134, BASE_LAT],
+                    [BASE_LON + 0.000134, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
 
-        # Create with default SRID (0)
-        cleabs = create_bdtopo_building(polygon_wkt=polygon_wkt)
+        cleabs = create_bdtopo_building(polygon_geojson=polygon_geojson)
 
         # Verify SRID is 0 (enforced by schema constraint)
         with get_connection() as conn:
@@ -346,18 +389,21 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_geometry_operations(self):
         """Test that geometry supports pairing operations (area, perimeter, npoints)."""
-        # Create a rectangular building 10x20 meters
-        polygon_wkt = """
-            MULTIPOLYGON Z(((
-                0 0 0,
-                20 0 0,
-                20 10 0,
-                0 10 0,
-                0 0 0
-            )))
-        """
+        # ~20x10m rectangular building
+        polygon_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000268, BASE_LAT],
+                    [BASE_LON + 0.000268, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
 
-        cleabs = create_bdtopo_building(polygon_wkt=polygon_wkt)
+        cleabs = create_bdtopo_building(polygon_geojson=polygon_geojson)
 
         # Verify geometry properties used in pairing
         with get_connection() as conn:
@@ -377,12 +423,12 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
                 self.assertEqual(len(result), 1)
                 building = result[0]
 
-                # Verify area (10 * 20 = 200 m²)
-                self.assertAlmostEqual(building["area"], 200.0, delta=0.1)
+                # Verify area (~20m * ~10m ≈ 200 m², with projection tolerance)
+                self.assertAlmostEqual(building["area"], 200.0, delta=2)
                 self.assertEqual(building["area_floor"], 200)
 
-                # Verify perimeter (2 * (10 + 20) = 60 m)
-                self.assertAlmostEqual(building["perimeter"], 60.0, delta=0.1)
+                # Verify perimeter (~2*(20+10) ≈ 60 m, with projection tolerance)
+                self.assertAlmostEqual(building["perimeter"], 60.0, delta=2)
                 self.assertEqual(building["perimeter_floor"], 60)
 
                 # Verify number of points (5 points including closure)
@@ -390,12 +436,35 @@ class TestCreateBdtopoBuilding(unittest.TestCase):
 
     def test_create_bdtopo_building_supports_spatial_operations(self):
         """Test that created buildings support spatial operations used in pairing."""
-        # Create two overlapping buildings
-        polygon_wkt_1 = "MULTIPOLYGON Z(((0 0 0, 10 0 0, 10 10 0, 0 10 0, 0 0 0)))"
-        polygon_wkt_2 = "MULTIPOLYGON Z(((5 5 0, 15 5 0, 15 15 0, 5 15 0, 5 5 0)))"
+        # Building 1: ~10x10m at base
+        polygon_geojson_1 = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON, BASE_LAT],
+                    [BASE_LON + 0.000134, BASE_LAT],
+                    [BASE_LON + 0.000134, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT + 0.000090],
+                    [BASE_LON, BASE_LAT],
+                ]
+            ],
+        }
+        # Building 2: ~10x10m offset 5m east + 5m north → partially overlaps
+        polygon_geojson_2 = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                    [BASE_LON + 0.000201, BASE_LAT + 0.000045],
+                    [BASE_LON + 0.000201, BASE_LAT + 0.000135],
+                    [BASE_LON + 0.000067, BASE_LAT + 0.000135],
+                    [BASE_LON + 0.000067, BASE_LAT + 0.000045],
+                ]
+            ],
+        }
 
-        cleabs_1 = create_bdtopo_building(polygon_wkt=polygon_wkt_1)
-        cleabs_2 = create_bdtopo_building(polygon_wkt=polygon_wkt_2)
+        cleabs_1 = create_bdtopo_building(polygon_geojson=polygon_geojson_1)
+        cleabs_2 = create_bdtopo_building(polygon_geojson=polygon_geojson_2)
 
         # Test spatial operations used in pairing
         with get_connection() as conn:

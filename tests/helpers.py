@@ -60,13 +60,13 @@ def create_rnb_building(
                     %(cleabs)s,
                     %(identifiant_rnb)s,
                     %(informations_rnb)s,
-                    ST_SetSRID(ST_GeomFromGeoJSON(%(polygon_geojson)s), 0),
+                    ST_SetSRID(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(%(polygon_geojson)s), 4326), 2154), 0),
                     false,
                     NOW(),
                     true,
                     %(gcms_numrec)s,
                     'FXX',
-                    ST_PointOnSurface(ST_SetSRID(ST_GeomFromGeoJSON(%(polygon_geojson)s), 0)),
+                    ST_PointOnSurface(ST_SetSRID(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(%(polygon_geojson)s), 4326), 2154), 0)),
                     %(status)s,
                     %(event_type)s
                 )
@@ -89,29 +89,27 @@ def create_rnb_building(
 
 
 def create_bdtopo_building(
-    polygon_wkt: str,
+    polygon_geojson: dict,
     cleabs: Optional[str] = None,
     gcms_detruit: bool = False,
     gcms_date_creation: Optional[datetime] = None,
     gcms_date_destruction: Optional[datetime] = None,
-    srid: int = 0,
 ) -> str:
     """
     Create a BD TOPO building in the batiment table.
 
     Only includes parameters used by the pairing process:
     - cleabs (identifier)
-    - geometrie (from polygon_wkt)
+    - geometrie (from polygon_geojson)
     - gcms_detruit (destruction flag)
     - gcms_date_creation (creation timestamp)
     - gcms_date_destruction (destruction timestamp)
 
     Parameters:
     -----------
-    polygon_wkt : str
-        WKT string for the building geometry (multipolygon Z).
-        Example: "MULTIPOLYGON Z(((x1 y1 z1, x2 y2 z2, ...)))"
-        If no Z values, they will be added as 0
+    polygon_geojson : dict
+        GeoJSON geometry dict (Polygon or MultiPolygon) with WGS84 coordinates.
+        Example: {"type": "Polygon", "coordinates": [[[lon, lat], ...]]}
     cleabs : str, optional
         BD TOPO identifier. Auto-generated if not provided
     gcms_detruit : bool
@@ -120,8 +118,6 @@ def create_bdtopo_building(
         Creation date. Default NOW()
     gcms_date_destruction : datetime, optional
         Destruction date. Only relevant if gcms_detruit is True
-    srid : int
-        Spatial reference ID (0 for local coordinates)
 
     Returns:
     --------
@@ -130,6 +126,8 @@ def create_bdtopo_building(
     # Generate cleabs if not provided
     if cleabs is None:
         cleabs = f"BATIMENT{uuid.uuid4().hex[:16].upper()}"
+
+    polygon_geojson_str = json.dumps(polygon_geojson)
 
     with get_connection() as conn:
         with get_cursor(conn) as cursor:
@@ -170,7 +168,7 @@ def create_bdtopo_building(
                     5.0,
                     %(gcms_numrec)s,
                     'FXX',
-                    ST_SetSRID(ST_GeomFromText(%(polygon_wkt)s), %(srid)s),
+                    ST_SetSRID(ST_Force3DZ(ST_Multi(ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(%(polygon_geojson)s), 4326), 2154))), 0),
                     NULL
                 )
             """
@@ -183,8 +181,7 @@ def create_bdtopo_building(
                     "gcms_date_creation": gcms_date_creation,
                     "gcms_date_destruction": gcms_date_destruction,
                     "gcms_numrec": _generate_numrec(),
-                    "polygon_wkt": polygon_wkt,
-                    "srid": srid,
+                    "polygon_geojson": polygon_geojson_str,
                 },
             )
 
