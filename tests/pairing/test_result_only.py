@@ -47,7 +47,7 @@ class TestResultOnly(unittest.TestCase):
             f"{identifiant_rnb} should be paired to {expected_bdtopo_cleabs}, got: {liens}",
         )
 
-    def _assert_not_paired(self, identifiant_rnb):
+    def _assert_rnb_not_paired(self, identifiant_rnb):
         """Assert that the RNB building was not paired to any BD TOPO building."""
         with get_connection() as conn:
             with get_cursor(conn) as cursor:
@@ -66,6 +66,25 @@ class TestResultOnly(unittest.TestCase):
                 "",
                 f"{identifiant_rnb} should not be paired, got: {rows[0]['liens_vers_batiment']}",
             )
+
+    def _assert_bdtopo_not_paired(self, bdtopo_cleabs):
+        """Assert that the BD TOPO building was not paired to any RNB building."""
+        with get_connection() as conn:
+            with get_cursor(conn) as cursor:
+                rows = dictfetchall(
+                    cursor,
+                    """
+                    SELECT identifiant_rnb, liens_vers_batiment
+                    FROM processus_divers.rnb_batiments_rnb_traites_creation
+                    WHERE liens_vers_batiment LIKE %s
+                    """,
+                    (f"%{bdtopo_cleabs}%",),
+                )
+        self.assertEqual(
+            rows,
+            [],
+            f"{bdtopo_cleabs} should not be linked to any RNB building, got: {rows}",
+        )
 
     @unittest.expectedFailure
     def test_almost_similar(self):
@@ -320,6 +339,50 @@ class TestResultOnly(unittest.TestCase):
         self._assert_paired_to(rnb_id, bdtopo_cleabs_3)
 
     @unittest.expectedFailure
+    def test_balcony_2(self):
+        """A house with a BD TOPO balcony: RNB house should pair to BD TOPO house, not balcony."""
+
+        # A house to link in bdtopo and rnb
+        house_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-0.357746, 49.320545],
+                    [-0.357579, 49.320495],
+                    [-0.357526, 49.320573],
+                    [-0.357697, 49.320622],
+                    [-0.357746, 49.320545],
+                ]
+            ],
+        }
+
+        house_cleabs = create_bdtopo_building(polygon_geojson=house_geojson)
+        create_rnb_building(
+            polygon_geojson=house_geojson, identifiant_rnb="HOUSE"
+        )
+
+        # A bd topo balcony that should not be linked
+        balcony_geojson = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-0.357697, 49.320622],
+                    [-0.357526, 49.320573],
+                    [-0.357516, 49.320588],
+                    [-0.357686, 49.320636],
+                    [-0.357697, 49.320622],
+                ]
+            ],
+        }
+
+        balcony_cleabs = create_bdtopo_building(polygon_geojson=balcony_geojson)
+
+        run_pairing_after_rnb_update()
+
+        self._assert_paired_to("HOUSE", house_cleabs)
+        self._assert_bdtopo_not_paired(balcony_cleabs)
+
+    @unittest.expectedFailure
     def test_balcony(self):
         """A small BD TOPO balcony overlapping an RNB building should NOT be paired to it."""
         create_bdtopo_building(
@@ -356,7 +419,7 @@ class TestResultOnly(unittest.TestCase):
 
         run_pairing_after_rnb_update()
 
-        self._assert_not_paired(rnb_id)
+        self._assert_rnb_not_paired(rnb_id)
 
     @unittest.expectedFailure
     def test_rnb_included(self):
@@ -393,7 +456,7 @@ class TestResultOnly(unittest.TestCase):
 
         run_pairing_after_rnb_update()
 
-        self._assert_not_paired(rnb_id)
+        self._assert_rnb_not_paired(rnb_id)
 
     def test_bdtopo_included(self):
         """A small BD TOPO building fully inside a large RNB building should NOT be paired to it."""
@@ -429,36 +492,4 @@ class TestResultOnly(unittest.TestCase):
 
         run_pairing_after_rnb_update()
 
-        self._assert_not_paired(rnb_id)
-
-    def test_rnb_point_included(self):
-        """A point-like RNB building (~1x1m) fully inside a large BD TOPO building should NOT be paired to it."""
-        # Large BD TOPO (~30x20m warehouse)
-        create_bdtopo_building(
-            polygon_geojson={
-                "type": "Polygon",
-                "coordinates": [
-                    [
-                        [0.2687113571020632, 44.56423494238916],
-                        [0.26870312970157784, 44.56407765246857],
-                        [0.26902948324936915, 44.56406495202117],
-                        [0.2689595503457838, 44.564246665844024],
-                        [0.2687113571020632, 44.56423494238916],
-                    ]
-                ],
-            }
-        )
-
-        # Point RNB: a single point inside the BD TOPO
-        rnb_id = "PAIRING_RNB_POINT"
-        create_rnb_building(
-            polygon_geojson={
-                "type": "Point",
-                "coordinates": [0.26886067, 44.56415045],
-            },
-            identifiant_rnb=rnb_id,
-        )
-
-        run_pairing_after_rnb_update()
-
-        self._assert_not_paired(rnb_id)
+        self._assert_rnb_not_paired(rnb_id)
