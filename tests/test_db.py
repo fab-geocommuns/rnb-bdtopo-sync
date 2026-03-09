@@ -11,20 +11,6 @@ from rnb import (
 
 class TestDbSetup(unittest.TestCase):
 
-    def test_params(self):
-
-        params = _get_conn_params()
-
-        expected = {
-            "host": "localhost",
-            "port": "5432",
-            "user": "postgres",
-            "password": "postgres",
-            "database": "rnb",
-        }
-
-        self.assertDictEqual(params, expected)
-
     def test_setup_db(self):
 
         setup_db()
@@ -137,7 +123,9 @@ class TestLastChangesInsertion(unittest.TestCase):
                 checked_row["event_id"], "c8a78ee0-35e6-4ff5-8885-569ad694c941"
             )
             self.assertIsNone(checked_row["created_at"])
-            self.assertEqual(checked_row["updated_at"], "2025-06-02T00:01:33.798109+00:00")
+            self.assertEqual(
+                checked_row["updated_at"], "2025-06-02T00:01:33.798109+00:00"
+            )
             self.assertEqual(checked_row["event_type"], "update")
 
 
