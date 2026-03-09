@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  postgis:
+    image: postgis/postgis:13-3.5
+    platform: linux/amd64
+    container_name: rnb-postgis
+    restart: unless-stopped
+    env_file:
+      - ./../.env.dev
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PWD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgis-data:
