@@ -338,7 +338,7 @@ class TestResultOnly(unittest.TestCase):
             identifiant_rnb=rnb_id_3,
         )
 
-        rnb_id_adjacent = "PAIRING_SPLIT_1"
+        rnb_id_adjacent = "PAIRING_SPLIT_ADJACENT"
         create_rnb_building(
             polygon_geojson={
                 "coordinates": [
