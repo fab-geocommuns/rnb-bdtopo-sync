@@ -5,10 +5,6 @@ services:
     image: postgis/postgis:13-3.5
     env_file:
       - ./../.env.tests
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PWD}
-      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     healthcheck:
