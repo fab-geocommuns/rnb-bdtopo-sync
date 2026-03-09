@@ -267,6 +267,193 @@ class TestResultOnly(unittest.TestCase):
         self._assert_paired_to(rnb_id_2, bdtopo_cleabs)
         self._assert_paired_to(rnb_id_3, bdtopo_cleabs)
 
+    def test_split_rnb_with_adjacent(self):
+        """
+        A BD TOPO building split into 3 RNB buildings: each RNB should be paired to it.
+        The catch is there is a lonely RNB building next to the 3 split. This one should be paired. Also it should be a problem to pair the 3 others
+        """
+        bdtopo_cleabs = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2691782961799163, 44.563850477701294],
+                        [0.2691235108346177, 44.563804620902005],
+                        [0.2693051070148442, 44.5637041725486],
+                        [0.2693556781031248, 44.56374757280952],
+                        [0.2691782961799163, 44.563850477701294],
+                    ]
+                ],
+            }
+        )
+
+        rnb_id_1 = "PAIRING_SPLIT_1"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2692974447281813, 44.56378141953155],
+                        [0.26924572429734894, 44.56373747338091],
+                        [0.2693051070148442, 44.5637041725486],
+                        [0.2693560612173087, 44.563748118725044],
+                        [0.2692974447281813, 44.56378141953155],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id_1,
+        )
+
+        rnb_id_2 = "PAIRING_SPLIT_2"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.26923806201168077, 44.5638160851052],
+                        [0.26918174420859486, 44.56377241193809],
+                        [0.2692461074115329, 44.56373692746598],
+                        [0.2692970616140258, 44.56378169248882],
+                        [0.26923806201168077, 44.5638160851052],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id_2,
+        )
+
+        rnb_id_3 = "PAIRING_SPLIT_3"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.26917867929412864, 44.56385075065893],
+                        [0.26912389394877323, 44.563804620902005],
+                        [0.26918174420859486, 44.56377241193809],
+                        [0.26923806201168077, 44.5638160851052],
+                        [0.26917867929412864, 44.56385075065893],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id_3,
+        )
+
+        rnb_id_adjacent = "PAIRING_SPLIT_1"
+        create_rnb_building(
+            polygon_geojson={
+                "coordinates": [
+                    [
+                        [0.269355548478984, 44.56374816198118],
+                        [0.26930492178385634, 44.56370468685353],
+                        [0.2693268823703363, 44.563691190447344],
+                        [0.2693766708745784, 44.5637375320762],
+                        [0.269355548478984, 44.56374816198118],
+                    ]
+                ],
+                "type": "Polygon",
+            },
+            identifiant_rnb=rnb_id_adjacent,
+        )
+
+        run_pairing_after_rnb_update()
+
+        self._assert_paired_to(rnb_id_1, bdtopo_cleabs)
+        self._assert_paired_to(rnb_id_2, bdtopo_cleabs)
+        self._assert_paired_to(rnb_id_3, bdtopo_cleabs)
+
+        self._assert_rnb_not_paired(rnb_id_adjacent)
+
+    @unittest.expectedFailure
+    def test_split_bdtopo_with_adjacent(self):
+        """
+        One RNB building covering 3 BD TOPO buildings: RNB should be paired to all 3.
+        The catch is there is a lonely BD TOPO building adjacent to the 3 splits.
+        The RNB should NOT be paired to the adjacent BD TOPO building.
+        """
+        rnb_id = "PAIRING_RNB_LARGE"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2691782961799163, 44.563850477701294],
+                        [0.2691235108346177, 44.563804620902005],
+                        [0.2693051070148442, 44.5637041725486],
+                        [0.2693556781031248, 44.56374757280952],
+                        [0.2691782961799163, 44.563850477701294],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id,
+        )
+
+        bdtopo_cleabs_1 = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2692974447281813, 44.56378141953155],
+                        [0.26924572429734894, 44.56373747338091],
+                        [0.2693051070148442, 44.5637041725486],
+                        [0.2693560612173087, 44.563748118725044],
+                        [0.2692974447281813, 44.56378141953155],
+                    ]
+                ],
+            }
+        )
+
+        bdtopo_cleabs_2 = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.26923806201168077, 44.5638160851052],
+                        [0.26918174420859486, 44.56377241193809],
+                        [0.2692461074115329, 44.56373692746598],
+                        [0.2692970616140258, 44.56378169248882],
+                        [0.26923806201168077, 44.5638160851052],
+                    ]
+                ],
+            }
+        )
+
+        bdtopo_cleabs_3 = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.26917867929412864, 44.56385075065893],
+                        [0.26912389394877323, 44.563804620902005],
+                        [0.26918174420859486, 44.56377241193809],
+                        [0.26923806201168077, 44.5638160851052],
+                        [0.26917867929412864, 44.56385075065893],
+                    ]
+                ],
+            }
+        )
+
+        bdtopo_cleabs_adjacent = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.269355548478984, 44.56374816198118],
+                        [0.26930492178385634, 44.56370468685353],
+                        [0.2693268823703363, 44.563691190447344],
+                        [0.2693766708745784, 44.5637375320762],
+                        [0.269355548478984, 44.56374816198118],
+                    ]
+                ],
+            }
+        )
+
+        run_pairing_after_rnb_update()
+
+        self._assert_paired_to(rnb_id, bdtopo_cleabs_1)
+        self._assert_paired_to(rnb_id, bdtopo_cleabs_2)
+        self._assert_paired_to(rnb_id, bdtopo_cleabs_3)
+        self._assert_bdtopo_not_paired(bdtopo_cleabs_adjacent)
+
     @unittest.expectedFailure
     def test_split_bdtopo(self):
         """An RNB building that covers 3 BD TOPO buildings: should be paired to all 3."""
@@ -357,9 +544,7 @@ class TestResultOnly(unittest.TestCase):
         }
 
         house_cleabs = create_bdtopo_building(polygon_geojson=house_geojson)
-        create_rnb_building(
-            polygon_geojson=house_geojson, identifiant_rnb="HOUSE"
-        )
+        create_rnb_building(polygon_geojson=house_geojson, identifiant_rnb="HOUSE")
 
         # A bd topo balcony that should not be linked
         balcony_geojson = {
@@ -458,6 +643,121 @@ class TestResultOnly(unittest.TestCase):
 
         self._assert_rnb_not_paired(rnb_id)
 
+    @unittest.expectedFailure
+    def test_large_buildings_slightly_offset(self):
+        """Two large buildings (warehouse-sized) slightly offset should be paired."""
+        bdtopo_cleabs = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2685972751760346, 44.56416226182381],
+                        [0.2685972751760346, 44.56352887720067],
+                        [0.26986568001271394, 44.56352887720067],
+                        [0.26986568001271394, 44.56416226182381],
+                        [0.2685972751760346, 44.56416226182381],
+                    ]
+                ],
+            }
+        )
+
+        rnb_id = "PAIRING_LARGE_OFFSET"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2686105813305062, 44.564161420997095],
+                        [0.2686105813305062, 44.5635284024211],
+                        [0.26988074061705447, 44.5635284024211],
+                        [0.26988074061705447, 44.564161420997095],
+                        [0.2686105813305062, 44.564161420997095],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id,
+        )
+
+        run_pairing_after_rnb_update()
+
+        self._assert_paired_to(rnb_id, bdtopo_cleabs)
+
+    def test_imperfect_rnb_split(self):
+        """A BD TOPO building split into 3 RNB buildings with imperfect geometry: each RNB should be paired to it."""
+        bdtopo_cleabs = create_bdtopo_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.27018081022004026, 44.56327404924565],
+                        [0.27008203843237766, 44.563184893949426],
+                        [0.2702331838725911, 44.56310049681559],
+                        [0.2703340646663719, 44.563189652241164],
+                        [0.27018081022004026, 44.56327404924565],
+                    ]
+                ],
+            }
+        )
+
+        rnb_id_1 = "PAIRING_IMPERFECT_SPLIT_1"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2701809009116971, 44.5632754513411],
+                        [0.27012151234083603, 44.56322348807211],
+                        [0.27017100281651096, 44.56318822725598],
+                        [0.2702309123397413, 44.56324278872029],
+                        [0.2701809009116971, 44.5632754513411],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id_1,
+        )
+
+        rnb_id_2 = "PAIRING_IMPERFECT_SPLIT_2"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.270236698882826, 44.563246501275415],
+                        [0.2701702651893072, 44.56318789918632],
+                        [0.27023002036335697, 44.5631595998658],
+                        [0.27028590902611427, 44.5632179515471],
+                        [0.270236698882826, 44.563246501275415],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id_2,
+        )
+
+        rnb_id_3 = "PAIRING_IMPERFECT_SPLIT_3"
+        create_rnb_building(
+            polygon_geojson={
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [0.2702855575250851, 44.563218201983375],
+                        [0.2702296688623278, 44.5631598503023],
+                        [0.2701147280276075, 44.56321845241962],
+                        [0.270082741434436, 44.56318439307657],
+                        [0.27023388687464944, 44.56310074725238],
+                        [0.27033547067046015, 44.56319040355032],
+                        [0.2702855575250851, 44.563218201983375],
+                    ]
+                ],
+            },
+            identifiant_rnb=rnb_id_3,
+        )
+
+        run_pairing_after_rnb_update()
+
+        self._assert_paired_to(rnb_id_1, bdtopo_cleabs)
+        self._assert_paired_to(rnb_id_2, bdtopo_cleabs)
+        self._assert_paired_to(rnb_id_3, bdtopo_cleabs)
+
     def test_bdtopo_included(self):
         """A small BD TOPO building fully inside a large RNB building should NOT be paired to it."""
         SMALL_BDTOPO = {
@@ -493,3 +793,47 @@ class TestResultOnly(unittest.TestCase):
         run_pairing_after_rnb_update()
 
         self._assert_rnb_not_paired(rnb_id)
+
+    def test_included_almost_similar(self):
+        """An RNB building almost identical to a BD TOPO building (slightly included) should be paired to it."""
+        bdtopo_cleabs = create_bdtopo_building(
+            polygon_geojson={
+                "coordinates": [
+                    [
+                        [0.27060440801921004, 44.56324931522775],
+                        [0.2708443026945986, 44.56324185901778],
+                        [0.27084510771027226, 44.56333018636687],
+                        [0.27080244187783364, 44.56332903925929],
+                        [0.27080646695623045, 44.56339901278014],
+                        [0.2706591490858159, 44.5634001598863],
+                        [0.27064868388188756, 44.56333075992066],
+                        [0.2706060180505574, 44.56332903925929],
+                        [0.27060440801921004, 44.56324931522775],
+                    ]
+                ],
+                "type": "Polygon",
+            }
+        )
+
+        rnb_id = "PAIRING_INCLUDED_ALMOST_SIMILAR"
+        create_rnb_building(
+            polygon_geojson={
+                "coordinates": [
+                    [
+                        [0.2706670336859247, 44.56340006605171],
+                        [0.27065151352644534, 44.56324783795165],
+                        [0.27084241148833144, 44.56324194048696],
+                        [0.27084344616562817, 44.563329296621305],
+                        [0.2708015417349827, 44.56332892803033],
+                        [0.27080516310550706, 44.56339896028001],
+                        [0.2706670336859247, 44.56340006605171],
+                    ]
+                ],
+                "type": "Polygon",
+            },
+            identifiant_rnb=rnb_id,
+        )
+
+        run_pairing_after_rnb_update()
+
+        self._assert_paired_to(rnb_id, bdtopo_cleabs)
