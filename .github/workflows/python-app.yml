@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Start PostgreSQL
+        run: docker compose -f db/docker-compose.tests.yml up -d --wait
       - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
