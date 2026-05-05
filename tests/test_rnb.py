@@ -99,9 +99,11 @@ class TestRemoveCalc(unittest.TestCase):
 
     def test_simple(self):
         """
-        SCENARIO 1:
+        VERIF 1:
+        > On calcule les bâtiments à mettre dans la table to_remove à partir du diff RNB
 
-        - on casse les liens uniquement si le bâtiment est inactif (is_active=0) ou a un statut constructionProject ou canceledConstructionProject
+        - on met uniquements les identifiants dans to_remove uniquement si le bâtiment est :
+            - inactif (is_active=0) ou a un statut constructionProject ou canceledConstructionProject
         - on ne casse pas le lien des bâtiments démolis
 
         """

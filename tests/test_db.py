@@ -81,6 +81,13 @@ class TestDbSetup(unittest.TestCase):
 class TestLastChangesInsertion(unittest.TestCase):
 
     def test_insert(self):
+        """
+        VERIF 3:
+        > On vérifie que les données du diff sont correctement insérées dans rnb_last_changes
+
+        - On vérifie que le nombre de lignes insérées correspond au nombre de lignes dans le diff (pas de filtre)
+
+        """
 
         setup_db()
 
@@ -154,6 +161,14 @@ class TestToRemoveInsertion(unittest.TestCase):
             self.assertEqual(len(in_delete_table), 0)
 
     def test_with_data(self):
+        """
+        VERIF 2:
+        > On vérifie que les bons bâtiments passent de to_remove à delete_batiment_rnb_lien_bdtopo__rnb_deactivation
+
+        - il faut que l'identifiant soit dans to_remove ET dans batiment_rnb_lien_bdtopo
+        pour que le lien soit cassé (insertion dans delete_batiment_rnb_lien_bdtopo__rnb_deactivation)
+
+        """
 
         setup_db()
         load_test_data()
