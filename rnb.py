@@ -148,6 +148,7 @@ def persist_last_changes(cursor, last_changes, table_creation_date: str):
     print(table_creation_date)
 
     _insert_last_changes(cursor, last_changes)
+    _from_last_changes_to_recserveur(cursor)
 
 
 def _insert_last_changes(cursor, last_changes):
@@ -192,10 +193,18 @@ def persist_to_remove(cursor, to_remove: set):
     cursor.copy_expert(copy_sql, to_remove_csv)
 
     # now fille the recserveur table
-    _fill_delete_table(cursor)
+    _from_toremove_to_recserveur(cursor)
 
 
-def _fill_delete_table(cursor):
+def _from_toremove_to_recserveur(cursor):
 
     # execute rnb_to_remove_to_delete function
     cursor.execute("SELECT processus_divers.rnb_to_remove_to_delete();")
+
+
+def _from_last_changes_to_recserveur(cursor):
+
+    # execute rnb_last_changes_to_update function
+    cursor.execute("SELECT processus_divers.rnb_last_changes_to_insert();")
+    cursor.execute("SELECT processus_divers.rnb_last_changes_to_update();")
+    cursor.execute("SELECT processus_divers.rnb_last_changes_to_delete();")

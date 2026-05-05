@@ -98,6 +98,13 @@ class TestDiffSorting(unittest.TestCase):
 class TestRemoveCalc(unittest.TestCase):
 
     def test_simple(self):
+        """
+        SCENARIO 1:
+
+        - on casse les liens uniquement si le bâtiment est inactif (is_active=0) ou a un statut constructionProject ou canceledConstructionProject
+        - on ne casse pas le lien des bâtiments démolis
+
+        """
 
         row = [
             {
