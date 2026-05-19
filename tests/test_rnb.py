@@ -109,6 +109,7 @@ class TestRemoveCalc(unittest.TestCase):
         """
 
         row = [
+            # Batiments inactifs ou avec statut à casser
             {
                 "rnb_id": "id1",
                 "is_active": "0",
@@ -120,20 +121,36 @@ class TestRemoveCalc(unittest.TestCase):
                 "status": "canceledConstructionProject",
             },
             {
-                "rnb_id": "id3",
-                "is_active": "1",
-                "status": "demolished",
-            },
-            {
                 "rnb_id": "id4",
                 "is_active": "0",
                 "status": "notUsable",
+            },
+            {
+                "rnb_id": "id8",
+                "is_active": "0",
+                "status": "constructed",
+            },
+            # Batiments actifs
+            {
+                "rnb_id": "id5",
+                "is_active": "1",
+                "status": "notUsable",
+            },
+            {
+                "rnb_id": "id6",
+                "is_active": "1",
+                "status": "constructed",
+            },
+            {
+                "rnb_id": "id3",
+                "is_active": "1",
+                "status": "demolished",
             },
         ]
 
         to_remove = calc_to_remove(row)
 
-        expected = set(["id1", "id2", "id4"])
+        expected = set(["id1", "id2", "id4", "id8"])
 
         self.assertEqual(to_remove, expected)
 

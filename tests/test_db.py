@@ -83,9 +83,15 @@ class TestLastChangesInsertion(unittest.TestCase):
     def test_insert(self):
         """
         VERIF 3:
-        > On vérifie que les données du diff sont correctement insérées dans rnb_last_changes
+        > On vérifie que les données du diff sont correctement insérées dans rnb_last_changes puis dans les tables recserveur
 
-        - On vérifie que le nombre de lignes insérées correspond au nombre de lignes dans le diff (pas de filtre)
+        - On vérifie que le nombre de lignes insérées (29) dans rnb_last_changes
+        correspond au nombre de lignes les plus récentes de chaque bâtiment du diff (1 ligne du diff est écartée sur KMNS213FSMEN)
+
+        - on vérifie que les bonnes lignes sont insérées ou non dans batiment_rnb_lien_bdtopo
+
+
+
 
         """
 
@@ -94,9 +100,13 @@ class TestLastChangesInsertion(unittest.TestCase):
         rnb_diff = getDiff_RNB_from_file("data/test_rnb_diff.csv")
         last_changes, _ = _convert_rnb_diff(rnb_diff)
 
+        load_test_data()
+
         with get_cursor() as cursor:
 
             persist_last_changes(cursor, last_changes, "2025-06-01")
+
+            # On vérifie que les données sont correctement insérées dans rnb_last_changes
 
             q = "SELECT *, ST_AsEWKT(point) as point_wkt, ST_AsEWKT(shape) as shape_wkt FROM processus_divers.rnb_last_changes;"
 
@@ -134,6 +144,45 @@ class TestLastChangesInsertion(unittest.TestCase):
                 checked_row["updated_at"], "2025-06-02T00:01:33.798109+00:00"
             )
             self.assertEqual(checked_row["event_type"], "update")
+
+            # On vérifie que les données sont correctement insérées dans les tables recserveur
+
+            q = "SELECT identifiant_rnb FROM processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage;"
+            in_update = dictfetchall(cursor, q)
+            rnb_ids_in_update = [row["identifiant_rnb"] for row in in_update]
+
+            self.assertIn("82ZQWMFBYPCF", rnb_ids_in_update)  # simple update
+            self.assertIn("STYJZGAE44Y3", rnb_ids_in_update)  # reactivate action
+            self.assertIn("7Z2FRNTCQDTQ", rnb_ids_in_update)  # notUsable status
+
+            self.assertNotIn("EDZZQBNYCJ1T", rnb_ids_in_update)  # create action
+            self.assertNotIn(
+                "EADPZVKZQAXK", rnb_ids_in_update
+            )  # batiment absent de batiment_rnb_lien_bdtopo
+
+            # On vérifie les données dans insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage
+            q = "SELECT identifiant_rnb FROM processus_divers.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage;"
+            in_insert = dictfetchall(cursor, q)
+            rnb_ids_in_insert = [row["identifiant_rnb"] for row in in_insert]
+
+            self.assertIn("EADPZVKZQAXK", rnb_ids_in_insert)  # create action
+            self.assertIn("ZH55HF9YQWM3", rnb_ids_in_insert)  # reactivate action
+            self.assertIn("N4XK3AHCG8P7", rnb_ids_in_insert)  # create action
+
+            self.assertNotIn(
+                "HWTGB2QKPM8E", rnb_ids_in_insert
+            )  # already knwon batiment
+
+            # On verifié que les données arrivent dans delete_batiment_rnb_lien_bdtopo__rnb_deactivation
+            q = "SELECT cleabs FROM processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_demolished"
+            in_delete = dictfetchall(cursor, q)
+            cleabs_in_delete = [row["cleabs"] for row in in_delete]
+
+            # RNB XQ3EJ22JG7EW - CleABS BATIMENT0000000310235320 - démoli et présent dans batiment_rnb_lien_bdtopo -> doit être dans la table de suppression
+            self.assertIn("BAT_RNB_0000002429289610", cleabs_in_delete)
+
+            # there should be only one row in the delete table as only one building in the test data has a status or action that should trigger a deletion and is present in batiment_rnb_lien_bdtopo
+            self.assertEqual(len(cleabs_in_delete), 1)
 
 
 class TestToRemoveInsertion(unittest.TestCase):

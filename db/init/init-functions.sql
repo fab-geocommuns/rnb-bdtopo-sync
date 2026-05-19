@@ -1791,7 +1791,7 @@ join public.gcms_territoire gt
   	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
 join public.batiment_rnb_lien_bdtopo brlb
 	on brlb.identifiant_rnb = rtc.rnb_id
-where (rtc.action like 'update' or (rtc.action like 'create' and rtc.event_type like 'reactivation'));
+where rtc.action = 'update' or rtc.action = 'reactivate';
 
 $$;
 
@@ -1872,7 +1872,11 @@ join public.gcms_territoire gt
 left join public.batiment_rnb_lien_bdtopo brlb
 	on brlb.identifiant_rnb = rtc.rnb_id
 where brlb.identifiant_rnb is null
-and ((rtc.action like 'update' and rtc.status like 'constructed') or rtc.action like 'create');
+and (
+        (rtc.action like 'update' and rtc.status like 'constructed') or 
+        (rtc.action like 'reactivate' and rtc.status like 'constructed') or 
+        rtc.action like 'create'
+        );
 
 $$;
 

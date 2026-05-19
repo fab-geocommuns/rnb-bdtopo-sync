@@ -24,6 +24,8 @@ def sync_rnb_from_file(filename: str) -> tuple[list, set]:
 
 def _from_diff_to_db(diff):
 
+    # todo: recréer les tables to_remove et last_changes
+
     last_changes, to_remove = _convert_rnb_diff(diff)
 
     # Insert last_changes and to_remove in the database
