@@ -2,7 +2,7 @@ import unittest
 from db import dictfetchall, setup_db, get_connection, get_cursor
 from pairing import run_pairing_after_rnb_update
 from tests.helpers import create_rnb_building, create_bdtopo_building
-
+from tests.visualize import visu
 
 # WGS84 coordinates near Orléans (dep 45)
 # At lat ~47.9: 10m east ≈ +0.000134° lon, 10m north ≈ +0.000090° lat
@@ -76,7 +76,9 @@ class TestBalcony(unittest.TestCase):
                     """,
                     (identifiant_rnb,),
                 )
-        self.assertEqual(len(results), 1, "Expected exactly one RNB building in traites")
+        self.assertEqual(
+            len(results), 1, "Expected exactly one RNB building in traites"
+        )
         return results[0]
 
     def test_small_bdtopo_detected_as_balcony(self):
@@ -119,6 +121,7 @@ class TestBalcony(unittest.TestCase):
             "BD TOPO should be marked as balcony",
         )
 
+    @visu
     def test_bdtopo_exactly_25m2_not_balcony(self):
         """BD TOPO structure with area exactly 25 m² should NOT be detected as balcony
         (condition is strict < 25)."""
@@ -324,7 +327,8 @@ class TestBalcony(unittest.TestCase):
 
     def test_balcony_matched_against_already_treated_rnb(self):
         """A balcony should be detected even if the RNB building was already treated
-        by a previous step (semantic pairing). The SQL uses UNION of restant and traites."""
+        by a previous step (semantic pairing). The SQL uses UNION of restant and traites.
+        """
 
         # Create a BD TOPO building that will match semantically with the RNB
         bdtopo_main = create_bdtopo_building(polygon_geojson=HOUSE_10x10)
@@ -338,9 +342,7 @@ class TestBalcony(unittest.TestCase):
         )
 
         # Create a small balcony barely overlapping the house
-        bdtopo_balcony = create_bdtopo_building(
-            polygon_geojson=BALCONY_4x4_OVERLAPPING
-        )
+        bdtopo_balcony = create_bdtopo_building(polygon_geojson=BALCONY_4x4_OVERLAPPING)
 
         run_pairing_after_rnb_update()
 
