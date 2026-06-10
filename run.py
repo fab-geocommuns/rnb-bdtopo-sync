@@ -1,5 +1,6 @@
 import datetime
 from datetime import datetime
+from db import get_connection, get_cursor, create_last_changes_table, create_to_remove_table
 from rnb import (
     getDiff_RNB_from_date,
     getDiff_RNB_from_file,
@@ -29,8 +30,15 @@ def _from_diff_to_db(diff):
     last_changes, to_remove = _convert_rnb_diff(diff)
 
     # Insert last_changes and to_remove in the database
-    persist_to_remove(to_remove)
-    persist_last_changes(last_changes)
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    with get_connection() as conn:
+        with get_cursor(conn) as cursor:
+            create_to_remove_table(cursor, today)
+            create_last_changes_table(cursor, today)
+            persist_to_remove(cursor, to_remove)
+            persist_last_changes(cursor, last_changes, today)
+    
 
 
 if __name__ == "__main__":

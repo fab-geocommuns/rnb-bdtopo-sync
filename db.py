@@ -78,11 +78,11 @@ def setup_db():
 
             today = datetime.now().strftime("%Y-%m-%d")
 
-            _create_to_remove_table(cursor, today)
-            _create_last_changes_table(cursor, today)
+            create_to_remove_table(cursor, today)
+            create_last_changes_table(cursor, today)
 
 
-def _create_to_remove_table(cursor, table_creation_date):
+def create_to_remove_table(cursor, table_creation_date):
 
     cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_to_remove cascade;")
 
@@ -99,7 +99,7 @@ def _create_to_remove_table(cursor, table_creation_date):
     )
 
 
-def _create_last_changes_table(cursor, table_creation_date):
+def create_last_changes_table(cursor, table_creation_date):
 
     cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_last_changes cascade")
 
