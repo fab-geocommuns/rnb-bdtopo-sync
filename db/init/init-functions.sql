@@ -701,22 +701,20 @@ DROP TABLE IF EXISTS processus_divers.rnb_croisements_creation CASCADE ;
 
 CREATE TABLE processus_divers.rnb_croisements_creation AS
 SELECT
-        string_agg(DISTINCT elem->>'id', '/') AS liens_vers_batiment ,
-        b.identifiant_rnb,
-        'Croisement sémantique' AS traitement
-FROM
-        processus_divers.rnb_batiments_rnb_restant_creation b,
-        jsonb_array_elements((informations_rnb::jsonb->>'ext_ids')::jsonb) AS elem,
-        processus_divers.rnb_batiments_bduni_restant_creation c
-WHERE
-        elem->>'id' IN (
-        SELECT
-                cleabs
-        FROM
-                processus_divers.rnb_batiments_bduni_restant_creation )
+    string_agg(DISTINCT elem->>'id', '/') AS liens_vers_batiment,
+    b.identifiant_rnb,
+    'Croisement sémantique' AS traitement
+FROM processus_divers.rnb_batiments_rnb_restant_creation b
+CROSS JOIN LATERAL jsonb_array_elements(
+    (b.informations_rnb::jsonb)->'ext_ids'
+) AS elem
+WHERE EXISTS (
+    SELECT 1
+    FROM processus_divers.rnb_batiments_bduni_restant_creation c
+    WHERE c.cleabs = elem->>'id'
+)
 GROUP BY
-        (b.informations_rnb::jsonb->>'ext_ids')::jsonb,
-        b.identifiant_rnb ;
+    b.identifiant_rnb;
 
 CREATE INDEX IF NOT EXISTS processus_divers_batiment_rnb_croisements_creation_rnb_identifiant_rnb_idx ON
 processus_divers.rnb_croisements_creation(identifiant_rnb);
@@ -1851,8 +1849,8 @@ BEGIN
 
 EXECUTE $$ 
 
-DROP TABLE IF EXISTS processus_divers.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;
-CREATE TABLE processus_divers.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage AS 
+DROP TABLE IF EXISTS pbm.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;
+CREATE TABLE pbm.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage AS 
 select
 
 	rtc.rnb_id as identifiant_rnb,
