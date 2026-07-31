@@ -1104,12 +1104,14 @@ processus_divers.rnb_batiments_rnb_restant_creation(identifiant_rnb);
 GRANT ALL ON
 processus_divers.rnb_batiments_rnb_restant_creation TO pbm;
 
--- On fait un buffer de 100m sur les geometries rnb de creation/modification et on les fusionne
+-- On fait un buffer de 25m sur les geometries rnb de creation/modification et on les fusionne
+insert into processus_divers.rnb_time_stats (step,date_time) values ('initialisation rnb_batiments_rnb_buffer_creation',CURRENT_TIMESTAMP);
+
 DROP TABLE IF EXISTS processus_divers.rnb_batiments_rnb_buffer_creation;
 
 CREATE TABLE processus_divers.rnb_batiments_rnb_buffer_creation AS 
 SELECT
-        (ST_Dump(st_union(st_buffer(geometrie,100)))).geom AS geometrie
+        (ST_Dump(st_union(st_buffer(geometrie_enveloppe,25::float)))).geom AS geometrie
 FROM
         processus_divers.rnb_batiments_rnb_restant_creation ;
 
@@ -1130,7 +1132,7 @@ FROM
 WHERE
 
         st_intersects(bdu.geometrie,
-        rnb.geometrie)
+        rnb.geometrie) and bdu.geometrie&&rnb.geometrie
         AND NOT bdu.gcms_detruit ;
 
 CREATE INDEX processus_divers_rnb_batiments_bduni_restant_creation_geometry_idx ON
