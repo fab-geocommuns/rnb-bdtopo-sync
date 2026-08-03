@@ -1734,14 +1734,16 @@ DECLARE
 BEGIN
 
 EXECUTE $$ 
-DROP TABLE IF EXISTS processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_deactivation CASCADE;
-CREATE TABLE processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_deactivation AS 
+DROP TABLE IF EXISTS pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation CASCADE;
+CREATE TABLE pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation AS 
 select
 	brlb.cleabs,
 	null as gcms_fingerprint
 	from processus_divers.rnb_to_remove rtr 
 join public.batiment_rnb_lien_bdtopo brlb on identifiant_rnb = rnb_id;
 
+GRANT ALL ON
+pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation TO recserveur;
 $$;
 
 RETURN 'Table delete_batiment_rnb_lien_bdtopo__rnb_deactivation créée';
@@ -1765,8 +1767,8 @@ BEGIN
 
 EXECUTE $$ 
 --------- création de la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo
-DROP TABLE IF EXISTS processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage CASCADE;
-CREATE TABLE processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage AS 
+DROP TABLE IF EXISTS pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage CASCADE;
+CREATE TABLE pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage AS 
 select
 	brlb.cleabs,
 	null as gcms_fingerprint,
@@ -1793,6 +1795,8 @@ join public.batiment_rnb_lien_bdtopo brlb
 	on brlb.identifiant_rnb = rtc.rnb_id
 where rtc.action = 'update' or rtc.action = 'reactivate';
 
+GRANT ALL ON
+pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage TO recserveur;
 $$;
 
 RETURN 'Table update_batiment_rnb_lien_bdtopo__moissonnag créée';
@@ -1816,8 +1820,8 @@ BEGIN
 
 EXECUTE $$ 
 
-DROP TABLE IF EXISTS processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_demolished CASCADE;
-CREATE TABLE processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_demolished AS 
+DROP TABLE IF EXISTS pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_demolished CASCADE;
+CREATE TABLE pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_demolished AS 
 select
 	brlb.cleabs,
 	null as gcms_fingerprint
@@ -1828,6 +1832,8 @@ join public.batiment_rnb_lien_bdtopo brlb
 	on brlb.identifiant_rnb = rtc.rnb_id
 where rtc.action like 'update' and rtc.status like 'demolished';
 
+GRANT ALL ON
+pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_demolished TO recserveur;
 $$;
 
 RETURN 'Table delete_batiment_rnb_lien_bdtopo__rnb_demolished créée';
@@ -1851,8 +1857,8 @@ BEGIN
 
 EXECUTE $$ 
 
-DROP TABLE IF EXISTS pbm.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;
-CREATE TABLE pbm.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage AS 
+DROP TABLE IF EXISTS pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;
+CREATE TABLE pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage AS 
 select
 
 	rtc.rnb_id as identifiant_rnb,
@@ -1877,7 +1883,8 @@ and (
         (rtc.action like 'reactivate' and rtc.status like 'constructed') or 
         rtc.action like 'create'
         );
-
+GRANT ALL ON
+pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage TO recserveur;
 $$;
 
 RETURN 'Table insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage créée';

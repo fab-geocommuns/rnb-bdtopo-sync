@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from utils import load_env
 from datetime import datetime
 
-
+# connexion par defaut avec le rôle "pbm"
 def _get_conn_params() -> dict:
 
     load_env()
@@ -13,8 +13,21 @@ def _get_conn_params() -> dict:
     return {
         "host": os.getenv("DB_HOST"),
         "port": os.getenv("DB_PORT"),
-        "user": os.getenv("POSTGRES_USER"),
-        "password": os.getenv("POSTGRES_PASSWORD"),
+        "user": os.getenv("POSTGRES_USER_PBM"),
+        "password": os.getenv("POSTGRES_PASSWORD_PBM"),
+        "database": os.getenv("POSTGRES_DB"),
+    }
+
+# connexion spécifique avec le rôle "recserveur"
+def _get_conn_params_recserveur() -> dict:
+
+    load_env()
+
+    return {
+        "host": os.getenv("DB_HOST"),
+        "port": os.getenv("DB_PORT"),
+        "user": os.getenv("POSTGRES_USER_RECSERVEUR"),
+        "password": os.getenv("POSTGRES_PASSWORD_RECSERVEUR"),
         "database": os.getenv("POSTGRES_DB"),
     }
 
@@ -28,6 +41,14 @@ def get_connection():
     finally:
         conn.close()
 
+@contextmanager
+def get_connection_recserveur():
+    params = _get_conn_params_recserveur()
+    conn = psycopg2.connect(**params)
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 @contextmanager
 def get_cursor(conn=None):
