@@ -1870,7 +1870,8 @@ select
 		|| '"identifiants_ban": '|| COALESCE(rtc.addresses_id,'') ||'}' as informations_rnb,
 	rtc.status,
 	rtc.event_type,
-	rtc.parent_buildings
+	rtc.parent_buildings,
+        true as diffusion 
 
 from processus_divers.rnb_last_changes rtc 
 join public.gcms_territoire gt 

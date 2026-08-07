@@ -47,6 +47,7 @@ def _from_diff_to_db(diff):
             prepare_recserveur_tables_for_to_remove(cursor)
             prepare_recserveur_tables_for_last_changes(cursor)
 
+    print("Lancement des reconciliations")
     
 
 

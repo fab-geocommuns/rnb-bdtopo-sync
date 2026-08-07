@@ -210,7 +210,7 @@ def _from_last_changes_to_recserveur(cursor):
     cursor.execute("SELECT processus_divers.rnb_last_changes_to_delete();")
 
 def prepare_recserveur_tables_for_to_remove(cursor):
-    commandes_sql = "DROP TABLE IF EXISTS receserveur.delete_batiment_rnb_lien_bdtopo__rnb_deactivation CASCADE;\
+    commandes_sql = "DROP TABLE IF EXISTS recserveur.delete_batiment_rnb_lien_bdtopo__rnb_deactivation CASCADE;\
                     CREATE TABLE recserveur.delete_batiment_rnb_lien_bdtopo__rnb_deactivation as\
                     select * from pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation;"
 
