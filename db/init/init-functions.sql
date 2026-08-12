@@ -1768,32 +1768,91 @@ BEGIN
 EXECUTE $$ 
 --------- création de la table UPDATE recserveur pour MAJ les objets batiment_rnb_lien_bdtopo
 DROP TABLE IF EXISTS pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage CASCADE;
-CREATE TABLE pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage AS 
-select
-	brlb.cleabs,
-	null as gcms_fingerprint,
-	rtc.rnb_id as identifiant_rnb,
-	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
-	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
-	'{"ext_ids": ' || COALESCE(rtc.ext_ids,'') || ', ' 
-		|| '"created_at": "'|| COALESCE(rtc.created_at,'') || '", ' 
-		|| '"updated_at": "'|| COALESCE(rtc.updated_at,'')|| '", '
-		|| '"identifiants_ban": '|| COALESCE(rtc.addresses_id,'') ||'}' as informations_rnb,
-	rtc.status,
-	rtc.event_type,
-	rtc.parent_buildings,
-	CASE 
-		WHEN not ST_DWithin(ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon), brlb.geometrie_enveloppe,1)
-			THEN 'to_link' 
-		ELSE ''
-	END AS commentaire_centralise
+CREATE TABLE pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage AS
+WITH rnb_changes AS (
+    SELECT
+        rtc.*,
+        gt.srid,
 
-from processus_divers.rnb_last_changes rtc 
-join public.gcms_territoire gt 
-  	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
-join public.batiment_rnb_lien_bdtopo brlb
-	on brlb.identifiant_rnb = rtc.rnb_id
-where rtc.action = 'update' or rtc.action = 'reactivate';
+        ST_ReducePrecision(
+            ST_SetSRID(
+                ST_Transform(
+                    ST_SetSRID(rtc.point, 4326),
+                    gt.srid
+                ),
+                0
+            ),
+            0.1
+        )::geometry AS geom_point,
+        
+        -- gestion du cas où la geométrie shape est un point au lieu d'un polygone
+        CASE
+                WHEN ST_GeometryType(rtc.shape) IN (
+                        'ST_Polygon',
+                        'ST_MultiPolygon'
+                )
+                THEN ST_Multi(
+                        ST_ReducePrecision(
+                        ST_SetSRID(
+                                ST_Transform(
+                                ST_SetSRID(rtc.shape, 4326),
+                                gt.srid
+                                ),
+                                0
+                        ),
+                        0.1
+                        )
+                )::geometry(MultiPolygon)
+
+                ELSE ST_SetSRID('MULTIPOLYGON EMPTY'::geometry, 0)::geometry(MultiPolygon)
+
+        END AS geom_shape
+
+    FROM processus_divers.rnb_last_changes rtc
+    JOIN public.gcms_territoire gt
+        ON ST_Intersects(
+            rtc.point,
+            ST_Transform(
+                ST_SetSRID(gt.geometrie, gt.srid),
+                4326
+            )
+        )
+    WHERE rtc.action IN ('update', 'reactivate')
+)
+
+SELECT
+        brlb.cleabs,
+        NULL AS gcms_fingerprint,
+        rc.rnb_id AS identifiant_rnb,
+
+        rc.geom_point AS geometrie,
+        rc.geom_shape AS geometrie_enveloppe,
+
+        jsonb_build_object(
+        'ext_ids', rc.ext_ids,
+        'created_at', rc.created_at,
+        'updated_at', rc.updated_at,
+        'identifiants_ban', rc.addresses_id
+        ) AS informations_rnb,
+
+        rc.status,
+        rc.event_type,
+        rc.parent_buildings,
+
+        CASE
+                WHEN NOT ST_IsEmpty(rc.geom_shape) THEN
+                        CASE
+                                WHEN ST_HausdorffDistance(rc.geom_shape, brlb.geometrie_enveloppe) > 1
+                                THEN 'to_link'
+                                ELSE ''
+                        END
+                ELSE ''
+        END AS commentaire_centralise
+
+FROM rnb_changes rc
+JOIN public.batiment_rnb_lien_bdtopo brlb
+    ON brlb.identifiant_rnb = rc.rnb_id;
+
 
 GRANT ALL ON
 pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage TO recserveur;
@@ -1859,31 +1918,83 @@ EXECUTE $$
 
 DROP TABLE IF EXISTS pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;
 CREATE TABLE pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage AS 
+WITH rnb_changes AS (
+    SELECT
+        rtc.*,
+        gt.srid,
+
+        ST_ReducePrecision(
+            ST_SetSRID(
+                ST_Transform(
+                    ST_SetSRID(rtc.point, 4326),
+                    gt.srid
+                ),
+                0
+            ),
+            0.1
+        )::geometry AS geom_point,
+        
+        -- gestion du cas où la geométrie shape est un point au lieu d'un polygone
+        CASE
+                WHEN ST_GeometryType(rtc.shape) IN (
+                        'ST_Polygon',
+                        'ST_MultiPolygon'
+                )
+                THEN ST_Multi(
+                        ST_ReducePrecision(
+                        ST_SetSRID(
+                                ST_Transform(
+                                ST_SetSRID(rtc.shape, 4326),
+                                gt.srid
+                                ),
+                                0
+                        ),
+                        0.1
+                        )
+                )::geometry(MultiPolygon)
+
+                ELSE ST_SetSRID('MULTIPOLYGON EMPTY'::geometry, 0)::geometry(MultiPolygon)
+
+        END AS geom_shape
+
+    FROM processus_divers.rnb_last_changes rtc
+    JOIN public.gcms_territoire gt
+        ON ST_Intersects(
+            rtc.point,
+            ST_Transform(
+                ST_SetSRID(gt.geometrie, gt.srid),
+                4326
+            )
+        )
+    WHERE (
+        (rtc.action = 'update' and rtc.status = 'constructed') or 
+        (rtc.action = 'reactivate' and rtc.status = 'constructed') or 
+        rtc.action = 'create'
+        )
+)
 select
 
-	rtc.rnb_id as identifiant_rnb,
-	ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.point, 4326),gt.srid), 0),0.1)::geometry as geometrie,
-	ST_Multi(ST_ReducePrecision(ST_SetSRID(ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 0),0.1))::geometry(Multipolygon) as geometrie_enveloppe,
-	'{"ext_ids": ' || COALESCE(rtc.ext_ids,'') || ', ' 
-		|| '"created_at": "'|| COALESCE(rtc.created_at,'') || '", ' 
-		|| '"updated_at": "'|| COALESCE(rtc.updated_at,'')|| '", '
-		|| '"identifiants_ban": '|| COALESCE(rtc.addresses_id,'') ||'}' as informations_rnb,
-	rtc.status,
-	rtc.event_type,
-	rtc.parent_buildings,
+	rc.rnb_id as identifiant_rnb,
+        rc.geom_point AS geometrie,
+        rc.geom_shape AS geometrie_enveloppe,
+	jsonb_build_object(
+                'ext_ids', rc.ext_ids,
+                'created_at', rc.created_at,
+                'updated_at', rc.updated_at,
+                'identifiants_ban', rc.addresses_id
+        ) AS informations_rnb,
+	rc.status,
+	rc.event_type,
+	rc.parent_buildings,
+        'to_link' AS commentaire_centralise,
         true as diffusion 
 
-from processus_divers.rnb_last_changes rtc 
-join public.gcms_territoire gt 
-  	ON ST_Intersects(rtc.point, ST_Transform(ST_SetSRID(gt.geometrie, gt.srid), 4326))
+from rnb_changes rc
+
 left join public.batiment_rnb_lien_bdtopo brlb
-	on brlb.identifiant_rnb = rtc.rnb_id
-where brlb.identifiant_rnb is null
-and (
-        (rtc.action like 'update' and rtc.status like 'constructed') or 
-        (rtc.action like 'reactivate' and rtc.status like 'constructed') or 
-        rtc.action like 'create'
-        );
+	on brlb.identifiant_rnb = rc.rnb_id      
+where brlb.identifiant_rnb is null;
+
 GRANT ALL ON
 pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage TO recserveur;
 $$;
