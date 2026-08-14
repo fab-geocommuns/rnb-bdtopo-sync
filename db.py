@@ -13,8 +13,8 @@ def _get_conn_params() -> dict:
     return {
         "host": os.getenv("DB_HOST"),
         "port": os.getenv("DB_PORT"),
-        "user": os.getenv("POSTGRES_USER_PBM"),
-        "password": os.getenv("POSTGRES_PASSWORD_PBM"),
+        "user": os.getenv("POSTGRES_USER"),
+        "password": os.getenv("POSTGRES_PASSWORD"),
         "database": os.getenv("POSTGRES_DB"),
     }
 
