@@ -1,5 +1,5 @@
 import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 from db import get_connection, get_connection_recserveur, get_cursor, create_last_changes_table, create_to_remove_table
 from rnb import (
     getDiff_RNB_from_date,
@@ -10,6 +10,7 @@ from rnb import (
     prepare_recserveur_tables_for_last_changes,
     prepare_recserveur_tables_for_to_remove
 )
+from recserveur import launch_poires
 
 
 def sync_rnb(since: datetime) -> tuple[list, set]:
@@ -47,8 +48,12 @@ def _from_diff_to_db(diff):
             prepare_recserveur_tables_for_to_remove(cursor)
             prepare_recserveur_tables_for_last_changes(cursor)
 
-    print("Lancement des reconciliations")
-    
+    print("Reconciliations pour delete deactivation, insert et update")
+    launch_poires(["update_batiment_rnb_lien_bdtopo__moissonnage",
+                    "insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage",
+                    "delete_batiment_rnb_lien_bdtopo__rnb_deactivation"])
+    print("Reconciliation delete demolished")
+    launch_poires("delete_batiment_rnb_lien_bdtopo__rnb_demolished")
 
 
 
@@ -57,7 +62,8 @@ if __name__ == "__main__":
     # sync_rnb_from_file("data/rnb_diff_2024-05-01.csv")  # 4.2 Go
     # sync_rnb_from_file("data/diff_2025-01-10.csv")  # 1.4 Go
     sync_rnb_from_file("data/diff_2025-06-01.csv")  # 53 Mo
+    # sync_rnb_from_file("data/diff_2026-07-29.csv")
     # sync_rnb_from_file("data/27_juillet_diff_33063_a_partir_de-2026-03-01_filtre.csv") # 17 Mo
 
-# one_week_ago = datetime.now() - timedelta(weeks=1)
+#  one_week_ago = datetime.now() - timedelta(weeks=1)
 # sync_rnb(one_week_ago)

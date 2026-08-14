@@ -39,7 +39,7 @@ def _get_conn_bduni_params() -> dict:
 
 
 def launch_poires(
-    table_name: str | list[str] = "insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage",
+    table_name: str | list[str],
     change_comment: str = "",
     zr_name: str = "Reconcilation RNB diff",
     nature_operation: str = "Documentaire",
@@ -194,8 +194,3 @@ def launch_poires_DATAC(
     # print("numrec : ",response["numrec"])
 
     return response
-
-
-# test execution launch
-launch_poires()
-# launch_poires_DATAC()

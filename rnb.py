@@ -22,7 +22,7 @@ def getDiff_RNB_from_file(filename: str) -> Iterator[dict[str, str]]:
 def getDiff_RNB_from_date(since: datetime) -> Iterator[dict[str, str]]:
 
     url = (
-        "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
+        "https://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
         + since.isoformat()
     )
 
