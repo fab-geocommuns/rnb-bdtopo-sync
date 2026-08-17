@@ -1105,8 +1105,6 @@ GRANT ALL ON
 processus_divers.rnb_batiments_rnb_restant_creation TO pbm;
 
 -- On fait un buffer de 25m sur les geometries rnb de creation/modification et on les fusionne
-insert into processus_divers.rnb_time_stats (step,date_time) values ('initialisation rnb_batiments_rnb_buffer_creation',CURRENT_TIMESTAMP);
-
 DROP TABLE IF EXISTS processus_divers.rnb_batiments_rnb_buffer_creation;
 
 CREATE TABLE processus_divers.rnb_batiments_rnb_buffer_creation AS 

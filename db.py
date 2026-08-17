@@ -71,15 +71,15 @@ def setup_db():
             _drop_tables(cursor)
 
             # Create schemas (execute the init-schemas.sql file)
-            with open("db/init/init-schemas.sql", "r") as f:
+            with open("db/init/init-schemas.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             # Create extensions (execute the init-extensions.sql file)
-            with open("db/init/init-extensions.sql", "r") as f:
+            with open("db/init/init-extensions.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             # Create tables (execute the init-tables.sql file)
-            with open("db/init/init-tables.sql", "r") as f:
+            with open("db/init/init-tables.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             # Create roles if they don't exist
@@ -94,7 +94,7 @@ def setup_db():
             )
 
             # Create functions (execute the init-functions.sql file)
-            with open("db/init/init-functions.sql", "r") as f:
+            with open("db/init/init-functions.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             today = datetime.now().strftime("%Y-%m-%d")
@@ -193,17 +193,17 @@ def load_test_data():
         with get_cursor(conn) as cursor:
 
             # RNB lien data
-            with open("data/test_batiment_rnb_lien_bdtopo.csv", "r") as f:
+            with open("data/test_batiment_rnb_lien_bdtopo.csv", "r", encoding="utf-8") as f:
                 cursor.copy_expert(
                     "COPY public.batiment_rnb_lien_bdtopo FROM STDIN WITH CSV HEADER",
                     f,
                 )
 
             # BD Topo building to match
-            with open("data/test_appariement_bdtopo.csv", "r") as f:
+            with open("data/test_appariement_bdtopo.csv", "r", encoding="utf-8") as f:
                 cursor.copy_expert(
                     "COPY public.staging_batiment_csv FROM STDIN WITH CSV HEADER",
                     f,
                 )
-            with open("db/init/load-batiment.sql", "r") as f:
+            with open("db/init/load-batiment.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
