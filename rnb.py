@@ -156,14 +156,60 @@ def _insert_last_changes(cursor, last_changes):
     # convert last_changes to an in-memory csv
     # then use COPY
 
+    # last_changes_csv = io.StringIO()
+    # fieldnames = last_changes[0].keys()
+    # writer = csv.DictWriter(last_changes_csv, fieldnames=fieldnames)
+    # writer.writeheader()
+    # writer.writerows(last_changes)
+    # last_changes_csv.seek(0)
+
+    # Récupération des colonnes de la table rnb_last_changes
+    cursor.execute("""
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'processus_divers'
+        AND table_name = 'rnb_last_changes'
+        ORDER BY ordinal_position
+    """)
+
+    table_columns = {row[0] for row in cursor.fetchall()}
+
+    # Lecture du tableau source
+    fieldnames = list(last_changes[0].keys())
+
+    # Colonnes communes tableau <-> table SQL
+    valid_fields = [
+        field
+        for field in fieldnames
+        if field in table_columns
+    ]
+
+    if not valid_fields:
+        raise ValueError(
+            "Aucune colonne du fichier CSV n'existe dans la table "
+            "processus_divers.rnb_last_changes"
+        )
+
+    # Création d'un CSV temporaire contenant uniquement les colonnes valides
     last_changes_csv = io.StringIO()
-    fieldnames = last_changes[0].keys()
-    writer = csv.DictWriter(last_changes_csv, fieldnames=fieldnames)
+
+    writer = csv.DictWriter(
+        last_changes_csv,
+        fieldnames=valid_fields,
+        extrasaction="ignore",
+    )
+
     writer.writeheader()
-    writer.writerows(last_changes)
+
+    writer.writerows(
+        {field: row.get(field) for field in valid_fields}
+        for row in last_changes
+    )
+
     last_changes_csv.seek(0)
 
-    copy_sql = f"COPY processus_divers.rnb_last_changes ({', '.join(fieldnames)}) FROM STDIN WITH CSV HEADER"
+    # Chargement dans PostgreSQL
+    copy_sql = f"COPY processus_divers.rnb_last_changes ({', '.join(valid_fields)}) FROM STDIN WITH CSV HEADER"
     cursor.copy_expert(copy_sql, last_changes_csv)
 
 
