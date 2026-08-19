@@ -22,7 +22,7 @@ def getDiff_RNB_from_file(filename: str) -> Iterator[dict[str, str]]:
 def getDiff_RNB_from_date(since: datetime) -> Iterator[dict[str, str]]:
 
     url = (
-        "http://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
+        "https://rnb-api.beta.gouv.fr/api/alpha/buildings/diff/?since="
         + since.isoformat()
     )
 
@@ -167,7 +167,7 @@ def _insert_last_changes(cursor, last_changes):
     cursor.copy_expert(copy_sql, last_changes_csv)
 
 
-def _convert_rnb_diff(diff):
+def convert_rnb_diff(diff):
     last_changes = rnb_get_most_recent(diff)
 
     to_remove = calc_to_remove(last_changes)
@@ -208,3 +208,31 @@ def _from_last_changes_to_recserveur(cursor):
     cursor.execute("SELECT processus_divers.rnb_last_changes_to_insert();")
     cursor.execute("SELECT processus_divers.rnb_last_changes_to_update();")
     cursor.execute("SELECT processus_divers.rnb_last_changes_to_delete();")
+
+def prepare_recserveur_tables_for_to_remove(cursor):
+    commandes_sql = "DROP TABLE IF EXISTS recserveur.delete_batiment_rnb_lien_bdtopo__rnb_deactivation CASCADE;\
+                    CREATE TABLE recserveur.delete_batiment_rnb_lien_bdtopo__rnb_deactivation as\
+                    select * from pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation;"
+
+    cursor.execute(commandes_sql)
+
+def prepare_recserveur_tables_for_last_changes(cursor):
+    commandes_sql = "DROP TABLE IF EXISTS recserveur.delete_batiment_rnb_lien_bdtopo__rnb_demolished CASCADE;\
+                    CREATE TABLE recserveur.delete_batiment_rnb_lien_bdtopo__rnb_demolished as\
+                    select * from pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_demolished;\
+                    \
+                    DROP TABLE IF EXISTS recserveur.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage CASCADE;\
+                    CREATE TABLE recserveur.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage as\
+                    select * from pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage;\
+                    \
+                    DROP TABLE IF EXISTS recserveur.update_batiment_rnb_lien_bdtopo__moissonnage CASCADE;\
+                    CREATE TABLE recserveur.update_batiment_rnb_lien_bdtopo__moissonnage as\
+                    select * from pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage;"
+
+
+    cursor.execute(commandes_sql)
+
+def make_link_bdtopo_from_rnb_diff(cursor):
+    # execute les fonctions SQL de calcul des liens entre RNB et BDTopo suite à l'import d'un diff RNB
+
+    cursor.execute("SELECT processus_divers.rnb_maj_liens_vers_batiment_car_maj_batiment_rnb();")
