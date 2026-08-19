@@ -1826,12 +1826,10 @@ SELECT
         rc.geom_point AS geometrie,
         rc.geom_shape AS geometrie_enveloppe,
 
-        jsonb_build_object(
-        'ext_ids', rc.ext_ids,
-        'created_at', rc.created_at,
-        'updated_at', rc.updated_at,
-        'identifiants_ban', rc.addresses_id
-        ) AS informations_rnb,
+        '{"ext_ids": ' || COALESCE(rc.ext_ids,'') || ', ' 
+        || '"created_at": "'|| COALESCE(rc.created_at,'') || '", ' 
+        || '"updated_at": "'|| COALESCE(rc.updated_at,'')|| '", '
+        || '"identifiants_ban": '|| COALESCE(rc.addresses_id,'') ||'}' as informations_rnb,
 
         rc.status,
         rc.event_type,
@@ -1975,12 +1973,10 @@ select
 	rc.rnb_id as identifiant_rnb,
         rc.geom_point AS geometrie,
         rc.geom_shape AS geometrie_enveloppe,
-	jsonb_build_object(
-                'ext_ids', rc.ext_ids,
-                'created_at', rc.created_at,
-                'updated_at', rc.updated_at,
-                'identifiants_ban', rc.addresses_id
-        ) AS informations_rnb,
+		'{"ext_ids": ' || COALESCE(rc.ext_ids,'') || ', ' 
+		|| '"created_at": "'|| COALESCE(rc.created_at,'') || '", ' 
+		|| '"updated_at": "'|| COALESCE(rc.updated_at,'')|| '", '
+		|| '"identifiants_ban": '|| COALESCE(rc.addresses_id,'') ||'}' as informations_rnb,
 	rc.status,
 	rc.event_type,
 	rc.parent_buildings,
