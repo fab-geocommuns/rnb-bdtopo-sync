@@ -138,7 +138,10 @@ def create_last_changes_table(cursor, table_creation_date):
             event_id varchar NULL,\
             created_at varchar NULL,\
             updated_at varchar NULL,\
-            event_type varchar NULL);\
+            event_type varchar NULL,
+            user_organization_name varchar NULL,\
+            user_organization_id varchar NULL,\
+            validated_by varchar NULL);\
         CREATE UNIQUE INDEX "rnb_last_changes_rnb_id_pkey" ON processus_divers.rnb_last_changes USING btree (rnb_id);\
         CREATE INDEX "rnb_last_changes_POINT_idx" ON processus_divers.rnb_last_changes USING gist (point);\
         GRANT SELECT ON processus_divers.rnb_last_changes TO invite;\
@@ -207,3 +210,8 @@ def load_test_data():
                 )
             with open("db/init/load-batiment.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
+
+# teste si une table est vide
+def is_table_empty(cursor, schema, table):
+    cursor.execute(f"SELECT NOT EXISTS (SELECT 1 FROM {schema}.{table})")
+    return cursor.fetchone()[0]
