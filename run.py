@@ -1,6 +1,6 @@
 import datetime
 from datetime import datetime, timedelta
-from db import get_connection, get_connection_recserveur, get_cursor, create_last_changes_table, create_to_remove_table
+from db import get_connection, get_connection_recserveur, get_cursor, create_last_changes_table, create_to_remove_table, is_table_empty
 from rnb import (
     getDiff_RNB_from_date,
     getDiff_RNB_from_file,
@@ -48,12 +48,49 @@ def _from_diff_to_db(diff):
             prepare_recserveur_tables_for_to_remove(cursor)
             prepare_recserveur_tables_for_last_changes(cursor)
 
-    print("Reconciliations pour delete deactivation, insert et update")
-    launch_poires(["update_batiment_rnb_lien_bdtopo__moissonnage",
-                    "insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage",
-                    "delete_batiment_rnb_lien_bdtopo__rnb_deactivation"])
-    print("Reconciliation delete demolished")
-    launch_poires("delete_batiment_rnb_lien_bdtopo__rnb_demolished")
+    table_delete_deactivation = "delete_batiment_rnb_lien_bdtopo__rnb_deactivation"
+    table_update = "update_batiment_rnb_lien_bdtopo__moissonnage"
+    table_insert = "insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage"
+    table_delete_demolished= "delete_batiment_rnb_lien_bdtopo__rnb_demolished"
+    tables_poires = []
+    demolished_poire = False
+
+    with get_connection_recserveur() as conn :
+        with get_cursor(conn) as cursor:
+
+            if is_table_empty(cursor,"recserveur",table_delete_deactivation):
+                print(table_delete_deactivation," vide")
+            else:
+                tables_poires.append(table_delete_deactivation)
+
+            if is_table_empty(cursor,"recserveur",table_update):
+                print(table_update," vide")
+            else:
+                tables_poires.append(table_update)
+
+            if is_table_empty(cursor,"recserveur",table_insert):
+                print(table_insert," vide")
+            else:
+                tables_poires.append(table_insert)
+                
+            if is_table_empty(cursor,"recserveur",table_delete_demolished):
+                print(table_delete_demolished," vide")
+            else:
+                demolished_poire = True
+
+
+    print("Reconciliations des tables : ", tables_poires)
+
+    result = launch_poires(tables_poires)
+    print("numrec MAJ batiment_rnb : ", result["numrec"])
+    
+    
+    if demolished_poire:
+        print("Reconciliation delete demolished")
+        result = launch_poires(table_delete_demolished)
+        print("numrec delete_demolished : ", result["numrec"])
+
+
 
 
 
@@ -61,9 +98,9 @@ if __name__ == "__main__":
 
     # sync_rnb_from_file("data/rnb_diff_2024-05-01.csv")  # 4.2 Go
     # sync_rnb_from_file("data/diff_2025-01-10.csv")  # 1.4 Go
-    sync_rnb_from_file("data/diff_2025-06-01.csv")  # 53 Mo
-    # sync_rnb_from_file("data/diff_2026-07-29.csv")
+    # sync_rnb_from_file("data/diff_2025-06-01.csv")  # 53 Mo
+    sync_rnb_from_file("data/diff_2026-07-29_with_users.csv")
     # sync_rnb_from_file("data/27_juillet_diff_33063_a_partir_de-2026-03-01_filtre.csv") # 17 Mo
 
-#  one_week_ago = datetime.now() - timedelta(weeks=1)
-# sync_rnb(one_week_ago)
+    # one_week_ago = datetime.now() - timedelta(days=1)
+    # sync_rnb(one_week_ago)

@@ -156,13 +156,6 @@ def _insert_last_changes(cursor, last_changes):
     # convert last_changes to an in-memory csv
     # then use COPY
 
-    # last_changes_csv = io.StringIO()
-    # fieldnames = last_changes[0].keys()
-    # writer = csv.DictWriter(last_changes_csv, fieldnames=fieldnames)
-    # writer.writeheader()
-    # writer.writerows(last_changes)
-    # last_changes_csv.seek(0)
-
     # Récupération des colonnes de la table rnb_last_changes
     cursor.execute("""
         SELECT column_name
