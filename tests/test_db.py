@@ -4,7 +4,7 @@ from db import get_connection, get_cursor
 from rnb import (
     persist_to_remove,
     getDiff_RNB_from_file,
-    _convert_rnb_diff,
+    convert_rnb_diff,
     persist_last_changes,
 )
 
@@ -26,8 +26,9 @@ class TestDbSetup(unittest.TestCase):
 
                 # Test schemas creation
                 cursor.execute("SELECT nspname FROM pg_namespace")
-                schemas = cursor.fetchall()
-                self.assertIn("processus_divers", [schema[0] for schema in schemas])
+                schemas = [schema[0] for schema in cursor.fetchall()]
+                self.assertIn("processus_divers", schemas)
+                self.assertIn("pbm", schemas)
 
                 # Test tables creation
                 cursor.execute(
@@ -98,7 +99,7 @@ class TestLastChangesInsertion(unittest.TestCase):
         setup_db()
 
         rnb_diff = getDiff_RNB_from_file("data/test_rnb_diff.csv")
-        last_changes, _ = _convert_rnb_diff(rnb_diff)
+        last_changes, _ = convert_rnb_diff(rnb_diff)
 
         load_test_data()
 
@@ -147,7 +148,7 @@ class TestLastChangesInsertion(unittest.TestCase):
 
             # On vérifie que les données sont correctement insérées dans les tables recserveur
 
-            q = "SELECT identifiant_rnb FROM processus_divers.update_batiment_rnb_lien_bdtopo__moissonnage;"
+            q = "SELECT identifiant_rnb FROM pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage;"
             in_update = dictfetchall(cursor, q)
             rnb_ids_in_update = [row["identifiant_rnb"] for row in in_update]
 
@@ -161,7 +162,7 @@ class TestLastChangesInsertion(unittest.TestCase):
             )  # batiment absent de batiment_rnb_lien_bdtopo
 
             # On vérifie les données dans insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage
-            q = "SELECT identifiant_rnb FROM processus_divers.insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage;"
+            q = "SELECT identifiant_rnb FROM pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage;"
             in_insert = dictfetchall(cursor, q)
             rnb_ids_in_insert = [row["identifiant_rnb"] for row in in_insert]
 
@@ -174,7 +175,7 @@ class TestLastChangesInsertion(unittest.TestCase):
             )  # already knwon batiment
 
             # On verifié que les données arrivent dans delete_batiment_rnb_lien_bdtopo__rnb_deactivation
-            q = "SELECT cleabs FROM processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_demolished"
+            q = "SELECT cleabs FROM pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_demolished"
             in_delete = dictfetchall(cursor, q)
             cleabs_in_delete = [row["cleabs"] for row in in_delete]
 
@@ -202,7 +203,7 @@ class TestToRemoveInsertion(unittest.TestCase):
             in_db = dictfetchall(cursor, q)
             self.assertEqual(len(in_db), 3)
 
-            q = "SELECT * from processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_deactivation;"
+            q = "SELECT * from pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation;"
 
             in_delete_table = dictfetchall(cursor, q)
 
@@ -239,7 +240,7 @@ class TestToRemoveInsertion(unittest.TestCase):
             in_db = dictfetchall(cursor, q)
             self.assertEqual(len(in_db), 3)
 
-            q = "SELECT * from processus_divers.delete_batiment_rnb_lien_bdtopo__rnb_deactivation;"
+            q = "SELECT * from pbm.rnb_delete_batiment_rnb_lien_bdtopo__rnb_deactivation;"
 
             in_delete_table = dictfetchall(cursor, q)
 

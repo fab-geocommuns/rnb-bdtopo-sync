@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from utils import load_env
 from datetime import datetime
 
-
+# connexion par defaut avec le rôle "pbm"
 def _get_conn_params() -> dict:
 
     load_env()
@@ -15,6 +15,19 @@ def _get_conn_params() -> dict:
         "port": os.getenv("DB_PORT"),
         "user": os.getenv("POSTGRES_USER"),
         "password": os.getenv("POSTGRES_PASSWORD"),
+        "database": os.getenv("POSTGRES_DB"),
+    }
+
+# connexion spécifique avec le rôle "recserveur"
+def _get_conn_params_recserveur() -> dict:
+
+    load_env()
+
+    return {
+        "host": os.getenv("DB_HOST"),
+        "port": os.getenv("DB_PORT"),
+        "user": os.getenv("POSTGRES_USER_RECSERVEUR"),
+        "password": os.getenv("POSTGRES_PASSWORD_RECSERVEUR"),
         "database": os.getenv("POSTGRES_DB"),
     }
 
@@ -28,6 +41,14 @@ def get_connection():
     finally:
         conn.close()
 
+@contextmanager
+def get_connection_recserveur():
+    params = _get_conn_params_recserveur()
+    conn = psycopg2.connect(**params)
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 @contextmanager
 def get_cursor(conn=None):
@@ -50,15 +71,15 @@ def setup_db():
             _drop_tables(cursor)
 
             # Create schemas (execute the init-schemas.sql file)
-            with open("db/init/init-schemas.sql", "r") as f:
+            with open("db/init/init-schemas.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             # Create extensions (execute the init-extensions.sql file)
-            with open("db/init/init-extensions.sql", "r") as f:
+            with open("db/init/init-extensions.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             # Create tables (execute the init-tables.sql file)
-            with open("db/init/init-tables.sql", "r") as f:
+            with open("db/init/init-tables.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             # Create roles if they don't exist
@@ -73,16 +94,16 @@ def setup_db():
             )
 
             # Create functions (execute the init-functions.sql file)
-            with open("db/init/init-functions.sql", "r") as f:
+            with open("db/init/init-functions.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
 
             today = datetime.now().strftime("%Y-%m-%d")
 
-            _create_to_remove_table(cursor, today)
-            _create_last_changes_table(cursor, today)
+            create_to_remove_table(cursor, today)
+            create_last_changes_table(cursor, today)
 
 
-def _create_to_remove_table(cursor, table_creation_date):
+def create_to_remove_table(cursor, table_creation_date):
 
     cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_to_remove cascade;")
 
@@ -99,7 +120,7 @@ def _create_to_remove_table(cursor, table_creation_date):
     )
 
 
-def _create_last_changes_table(cursor, table_creation_date):
+def create_last_changes_table(cursor, table_creation_date):
 
     cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_last_changes cascade")
 
@@ -117,7 +138,10 @@ def _create_last_changes_table(cursor, table_creation_date):
             event_id varchar NULL,\
             created_at varchar NULL,\
             updated_at varchar NULL,\
-            event_type varchar NULL);\
+            event_type varchar NULL,
+            user_organization_name varchar NULL,\
+            user_organization_id varchar NULL,\
+            validated_by varchar NULL);\
         CREATE UNIQUE INDEX "rnb_last_changes_rnb_id_pkey" ON processus_divers.rnb_last_changes USING btree (rnb_id);\
         CREATE INDEX "rnb_last_changes_POINT_idx" ON processus_divers.rnb_last_changes USING gist (point);\
         GRANT SELECT ON processus_divers.rnb_last_changes TO invite;\
@@ -172,17 +196,22 @@ def load_test_data():
         with get_cursor(conn) as cursor:
 
             # RNB lien data
-            with open("data/test_batiment_rnb_lien_bdtopo.csv", "r") as f:
+            with open("data/test_batiment_rnb_lien_bdtopo.csv", "r", encoding="utf-8") as f:
                 cursor.copy_expert(
                     "COPY public.batiment_rnb_lien_bdtopo FROM STDIN WITH CSV HEADER",
                     f,
                 )
 
             # BD Topo building to match
-            with open("data/test_appariement_bdtopo.csv", "r") as f:
+            with open("data/test_appariement_bdtopo.csv", "r", encoding="utf-8") as f:
                 cursor.copy_expert(
                     "COPY public.staging_batiment_csv FROM STDIN WITH CSV HEADER",
                     f,
                 )
-            with open("db/init/load-batiment.sql", "r") as f:
+            with open("db/init/load-batiment.sql", "r", encoding="utf-8") as f:
                 cursor.execute(f.read())
+
+# teste si une table est vide
+def is_table_empty(cursor, schema, table):
+    cursor.execute(f"SELECT NOT EXISTS (SELECT 1 FROM {schema}.{table})")
+    return cursor.fetchone()[0]
