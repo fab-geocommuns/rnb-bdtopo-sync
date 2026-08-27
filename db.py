@@ -125,9 +125,11 @@ def create_last_changes_table(cursor, table_creation_date):
     cursor.execute(f"DROP TABLE IF EXISTS processus_divers.rnb_last_changes cascade")
 
     create_sql = f"""\
-        CREATE TABLE IF NOT EXISTS processus_divers.rnb_last_changes (action varchar NULL,\
+        CREATE TABLE IF NOT EXISTS processus_divers.rnb_last_changes (\
+            action varchar NULL,\
             rnb_id varchar NULL,\
             status varchar NULL,\
+            to_link BOOLEAN DEFAULT FALSE,\
             is_active varchar NULL,\
             sys_period varchar NULL,\
             point public.geometry NULL,\

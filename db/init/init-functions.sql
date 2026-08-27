@@ -1854,6 +1854,19 @@ GRANT ALL ON
 pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage TO recserveur;
 $$;
 
+WITH rnb_to_link AS (
+        SELECT ubrlb.identifiant_rnb
+        FROM pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage ubrlb
+        JOIN public.batiment_rnb_lien_bdtopo brlb
+                ON brlb.identifiant_rnb = ubrlb.identifiant_rnb
+        WHERE ST_HausdorffDistance(ubrlb.geometrie_enveloppe, brlb.geometrie_enveloppe) > 1
+)
+
+UPDATE processus_divers.rnb_last_changes 
+SET to_link = True
+FROM rnb_to_link rtl
+WHERE rtl.identifiant_rnb = processus_divers.rnb_last_changes.rnb_id;
+
 RETURN 'Table update_batiment_rnb_lien_bdtopo__moissonnag créée';
 END;
 
