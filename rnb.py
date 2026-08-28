@@ -34,7 +34,7 @@ def getDiff_RNB_from_date(since: datetime) -> Iterator[dict[str, str]]:
 
     def iterate_rows() -> Iterator[dict[str, str]]:
         # On garde le contenu du CSV en mémoire pour le parcourir
-        csv_file = io.StringIO(response.text)
+        csv_file = io.StringIO(response.content.decode("utf-8-sig"))
         reader = csv.DictReader(csv_file)
         for row in reader:
             yield row
