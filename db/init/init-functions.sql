@@ -1834,6 +1834,8 @@ SELECT
         rc.status,
         rc.event_type,
         rc.parent_buildings,
+        rc.user_organization_name as organization_name,
+        rc.user_organization_id::INTEGER as organization_id,
 
         CASE
                 WHEN NOT ST_IsEmpty(rc.geom_shape) THEN
@@ -1993,6 +1995,8 @@ select
 	rc.status,
 	rc.event_type,
 	rc.parent_buildings,
+        rc.user_organization_name as organization_name,
+        rc.user_organization_id::INTEGER as organization_id,
         'to_link' AS commentaire_centralise,
         true as diffusion 
 
