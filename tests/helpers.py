@@ -40,6 +40,7 @@ def create_rnb_building(
     )
     polygon_geojson_str = json.dumps(polygon_geojson)
 
+    # insertion dans la table batiment_rnb_lien_bdtopo
     with get_connection() as conn:
         with get_cursor(conn) as cursor:
             insert_sql = """
@@ -84,6 +85,28 @@ def create_rnb_building(
                     "event_type": event_type,
                 },
             )
+
+        # insertion dans la table rnb_last_changes
+            with get_connection() as conn:
+                with get_cursor(conn) as cursor:
+                    insert_sql = """
+                        INSERT INTO processus_divers.rnb_last_changes (
+                            rnb_id,
+                            to_link
+                        ) VALUES (
+                            %(identifiant_rnb)s,
+                            True
+                        )
+                    """
+        
+                    cursor.execute(
+                        insert_sql,
+                        {
+                            "identifiant_rnb": identifiant_rnb,
+                        },
+                    )
+
+            
 
     return cleabs
 
