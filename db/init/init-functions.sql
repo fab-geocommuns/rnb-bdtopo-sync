@@ -1085,10 +1085,10 @@ SELECT
         rnb.informations_rnb::varchar
 FROM
         public.batiment_rnb_lien_bdtopo rnb
+JOIN processus_divers.rnb_last_changes rlc on rlc.rnb_id = rnb.identifiant_rnb 
 WHERE
         NOT gcms_detruit
-        AND (gcms_date_creation >= CURRENT_DATE - INTERVAL '2 days'
-				OR gcms_date_modification >= CURRENT_DATE - INTERVAL '2 days');
+        AND rlc.to_link;
 
 CREATE INDEX processus_divers_rnb_batiments_rnb_restant_creation_geometry_idx ON
 processus_divers.rnb_batiments_rnb_restant_creation
@@ -1835,17 +1835,7 @@ SELECT
         rc.event_type,
         rc.parent_buildings,
         rc.user_organization_name as organization_name,
-        rc.user_organization_id::INTEGER as organization_id,
-
-        CASE
-                WHEN NOT ST_IsEmpty(rc.geom_shape) THEN
-                        CASE
-                                WHEN ST_HausdorffDistance(rc.geom_shape, brlb.geometrie_enveloppe) > 1
-                                THEN 'to_link'
-                                ELSE ''
-                        END
-                ELSE ''
-        END AS commentaire_centralise
+        rc.user_organization_id::INTEGER as organization_id
 
 FROM rnb_changes rc
 JOIN public.batiment_rnb_lien_bdtopo brlb
@@ -1997,7 +1987,6 @@ select
 	rc.parent_buildings,
         rc.user_organization_name as organization_name,
         rc.user_organization_id::INTEGER as organization_id,
-        'to_link' AS commentaire_centralise,
         true as diffusion 
 
 from rnb_changes rc
