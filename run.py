@@ -18,6 +18,7 @@ from rnb import (
     prepare_recserveur_tables_for_to_remove
 )
 from recserveur import launch_poires
+from pairing import run_pairing_after_rnb_update
 
 
 def sync_rnb(since: datetime) -> tuple[list, set]:
@@ -25,14 +26,12 @@ def sync_rnb(since: datetime) -> tuple[list, set]:
     rnb_diff = getDiff_RNB_from_date(since)
 
     _from_diff_to_db(rnb_diff)
-    # _merge_rnb_diff()
      
 
 def sync_rnb_from_file(filename: str) -> tuple[list, set]:
     rnb_diff = getDiff_RNB_from_file(filename)
 
     _from_diff_to_db(rnb_diff)
-    # _merge_rnb_diff()
      
 
 
@@ -52,7 +51,7 @@ def _from_diff_to_db(diff):
 
 
 
-def _merge_rnb_diff():
+def merge_rnb_diff():
 
     # Lancement de la réconciliation automatique des changements avec une connexion en rôle recserveur
     print("Preparation des tables de reconciliation")
@@ -111,7 +110,16 @@ if __name__ == "__main__":
     # sync_rnb_from_file("data/diff_2025-01-10.csv")  # 1.4 Go
     # sync_rnb_from_file("data/diff_2025-06-01.csv")  # 53 Mo
     # sync_rnb_from_file("data/diff_2026-07-29_with_users.csv")
-    sync_rnb_from_file("data/27_juillet_diff_33063_a_partir_de-2026-03-01_filtre.csv") # 17 Mo
+    # sync_rnb_from_file("data/27_juillet_diff_33063_a_partir_de-2026-03-01_filtre.csv") # 17 Mo
+    # sync_rnb_from_file("data/diff_2026-08-12-2026-08-13.csv") # 17 Mo
+    # sync_rnb_from_file("data/diff_2024-05-01-to-2026-09-28.csv")  # 6.5 Go
+    sync_rnb_from_file("data/diff_2026-08-31_bati_erreur.csv")
 
-    # one_week_ago = datetime.now() - timedelta(days=2)
+    # one_week_ago = datetime.now() - timedelta(days=1)
     # sync_rnb(one_week_ago)
+
+    # merge_rnb_diff
+    print("Synchro terminée")
+    print("Lancement du calcul d'appariement")
+    # run_pairing_after_rnb_update()
+    print("Appariement mis à jour")

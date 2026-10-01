@@ -271,7 +271,9 @@ def prepare_recserveur_tables_for_last_changes(cursor):
 
     cursor.execute(commandes_sql)
 
-def make_link_bdtopo_from_rnb_diff(cursor):
-    # execute les fonctions SQL de calcul des liens entre RNB et BDTopo suite à l'import d'un diff RNB
-
-    cursor.execute("SELECT processus_divers.rnb_maj_liens_vers_batiment_car_maj_batiment_rnb();")
+def prepare_recserveur_tables_from_last_pairing(cursor):
+    commandes_sql = "DROP TABLE IF EXISTS recserveur.processus_divers.update_batiment_rnb_lien_bdtopo__batiment_rnb_creation CASCADE;\
+                    CREATE TABLE recserveur.processus_divers.update_batiment_rnb_lien_bdtopo__batiment_rnb_creation as\
+                    select * from pbm.processus_divers.update_batiment_rnb_lien_bdtopo__batiment_rnb_creation;"
+                    
+    cursor.execute(commandes_sql)
