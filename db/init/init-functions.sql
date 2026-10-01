@@ -1791,13 +1791,15 @@ WITH rnb_changes AS (
                 )
                 THEN ST_Multi(
                         ST_ReducePrecision(
-                        ST_SetSRID(
-                                ST_Transform(
-                                ST_SetSRID(rtc.shape, 4326),
-                                gt.srid
-                                ),
-                                0
-                        ),
+                                ST_RemoveRepeatedPoints(
+                                        ST_SetSRID(
+                                                ST_Transform(
+                                                ST_SetSRID(rtc.shape, 4326),
+                                                gt.srid
+                                                ),
+                                                0
+                                        ),
+                                0.01),
                         0.1
                         )
                 )::geometry(MultiPolygon)
@@ -1943,13 +1945,15 @@ WITH rnb_changes AS (
                 )
                 THEN ST_Multi(
                         ST_ReducePrecision(
-                        ST_SetSRID(
-                                ST_Transform(
-                                ST_SetSRID(rtc.shape, 4326),
-                                gt.srid
-                                ),
-                                0
-                        ),
+                                ST_RemoveRepeatedPoints(
+                                        ST_SetSRID(
+                                                ST_Transform(
+                                                ST_SetSRID(rtc.shape, 4326),
+                                                gt.srid
+                                                ),
+                                                0
+                                        ),
+                                0.01),
                         0.1
                         )
                 )::geometry(MultiPolygon)
