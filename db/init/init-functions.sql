@@ -2032,6 +2032,11 @@ GRANT ALL ON
 pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage TO recserveur;
 $$;
 
+UPDATE processus_divers.rnb_last_changes 
+SET to_link = True
+FROM pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage rib
+WHERE rib.identifiant_rnb = processus_divers.rnb_last_changes.rnb_id;
+
 RETURN 'Table insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage créée';
 END;
 
