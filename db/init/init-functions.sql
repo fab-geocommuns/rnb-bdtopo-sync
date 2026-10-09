@@ -1768,60 +1768,77 @@ EXECUTE $$
 DROP TABLE IF EXISTS pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage CASCADE;
 CREATE TABLE pbm.rnb_update_batiment_rnb_lien_bdtopo__moissonnage AS
 WITH rnb_changes AS (
-    SELECT
-        rtc.*,
-        gt.srid,
+        SELECT
+                rtc.*,
+                brlb.cleabs,
+                gt.srid,
 
-        ST_ReducePrecision(
-            ST_SetSRID(
-                ST_Transform(
-                    ST_SetSRID(rtc.point, 4326),
-                    gt.srid
+                ST_ReducePrecision(
+                ST_SetSRID(
+                        ST_Transform(
+                        ST_SetSRID(rtc.point, 4326),
+                        gt.srid
+                        ),
+                        0
                 ),
-                0
-            ),
-            0.1
-        )::geometry AS geom_point,
-        
-        -- gestion du cas où la geométrie shape est un point au lieu d'un polygone
-        CASE
-                WHEN ST_GeometryType(rtc.shape) IN (
-                        'ST_Polygon',
-                        'ST_MultiPolygon'
-                )
-                THEN ST_Multi(
-                        ST_ReducePrecision(
-                                ST_RemoveRepeatedPoints(
-                                        ST_SetSRID(
-                                                ST_Transform(
-                                                ST_SetSRID(rtc.shape, 4326),
-                                                gt.srid
-                                                ),
-                                                0
-                                        ),
-                                0.01),
-                        0.1
+                0.1
+                )::geometry AS geom_point,
+                
+                -- gestion du cas où la geométrie shape est un point au lieu d'un polygone
+                CASE
+                        WHEN ST_GeometryType(rtc.shape) IN (
+                                'ST_Polygon',
+                                'ST_MultiPolygon'
                         )
-                )::geometry(MultiPolygon)
+                        THEN ST_SetSRID(
+                        ST_Multi(
+                                ST_CollectionExtract(
 
-                ELSE ST_SetSRID('MULTIPOLYGON EMPTY'::geometry, 0)::geometry(MultiPolygon)
+                                        ST_Buffer(
+                                                ST_Buffer(
+                                                        ST_Buffer(
+                                                        ST_MakeValid(
+                                                                ST_GeomFromText(
+                                                                        ST_AsText(
+                                                                                ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 1
+                                                                                )
+                                                                        )
+                                                                ),
+                                                        -0.05, -- 1. Érode le polygone de 10cm pour couper l'excroisance fine
+                                                        'endcap=square join=mitre'
+                                                        ),
+                                                        0.1, -- 2. Dilate le polygone de 20cm pour éliminer les micros-trous ou fissures
+                                                        'endcap=square join=mitre'
+                                                ),
+                                        -0.05, -- 3. Erode le polygone de 10cm pour revenir à la taille initiale
+                                        'endcap=square join=mitre'
+                                        ),
+                                3
+                                )
+                        ),
+                        0
+                        )::geometry(MultiPolygon)
 
-        END AS geom_shape
+                        ELSE ST_SetSRID('MULTIPOLYGON EMPTY'::geometry, 0)::geometry(MultiPolygon)
 
-    FROM processus_divers.rnb_last_changes rtc
-    JOIN public.gcms_territoire gt
-        ON ST_Intersects(
-            rtc.point,
-            ST_Transform(
-                ST_SetSRID(gt.geometrie, gt.srid),
-                4326
-            )
-        )
-    WHERE rtc.action IN ('update', 'reactivate')
+                END AS geom_shape
+
+        FROM processus_divers.rnb_last_changes rtc
+        JOIN public.gcms_territoire gt
+                ON ST_Intersects(
+                rtc.point,
+                ST_Transform(
+                        ST_SetSRID(gt.geometrie, gt.srid),
+                        4326
+                )
+                )
+        JOIN public.batiment_rnb_lien_bdtopo brlb
+                ON brlb.identifiant_rnb = rtc.rnb_id
+        WHERE rtc.action IN ('update', 'reactivate')
 )
 
 SELECT
-        brlb.cleabs,
+        rc.cleabs,
         NULL AS gcms_fingerprint,
         rc.rnb_id AS identifiant_rnb,
 
@@ -1839,9 +1856,7 @@ SELECT
         rc.user_organization_name as organization_name,
         rc.user_organization_id::INTEGER as organization_id
 
-FROM rnb_changes rc
-JOIN public.batiment_rnb_lien_bdtopo brlb
-    ON brlb.identifiant_rnb = rc.rnb_id;
+FROM rnb_changes rc;
 
 
 GRANT ALL ON
@@ -1943,19 +1958,33 @@ WITH rnb_changes AS (
                         'ST_Polygon',
                         'ST_MultiPolygon'
                 )
-                THEN ST_Multi(
-                        ST_ReducePrecision(
-                                ST_RemoveRepeatedPoints(
-                                        ST_SetSRID(
-                                                ST_Transform(
-                                                ST_SetSRID(rtc.shape, 4326),
-                                                gt.srid
+                THEN ST_SetSRID(
+                ST_Multi(
+                        ST_CollectionExtract(
+
+                                ST_Buffer(
+                                        ST_Buffer(
+                                                ST_Buffer(
+                                                ST_MakeValid(
+                                                        ST_GeomFromText(
+                                                                ST_AsText(
+                                                                        ST_Transform(ST_SetSRID(rtc.shape, 4326), gt.srid), 1
+                                                                        )
+                                                                )
+                                                        ),
+                                                -0.05, -- 1. Érode le polygone de 10cm pour couper l'excroisance fine
+                                                'endcap=square join=mitre'
                                                 ),
-                                                0
+                                                0.1, -- 2. Dilate le polygone de 20cm pour éliminer les micros-trous ou fissures
+                                                'endcap=square join=mitre'
                                         ),
-                                0.01),
-                        0.1
+                                -0.05, -- 3. Erode le polygone de 10cm pour revenir à la taille initiale
+                                'endcap=square join=mitre'
+                                ),
+                        3
                         )
+                ),
+                0
                 )::geometry(MultiPolygon)
 
                 ELSE ST_SetSRID('MULTIPOLYGON EMPTY'::geometry, 0)::geometry(MultiPolygon)
@@ -1971,11 +2000,15 @@ WITH rnb_changes AS (
                 4326
             )
         )
+
+        left join public.batiment_rnb_lien_bdtopo brlb
+                on brlb.identifiant_rnb = rtc.rnb_id      
     WHERE (
         (rtc.action = 'update' and rtc.status = 'constructed') or 
         (rtc.action = 'reactivate' and rtc.status = 'constructed') or 
         rtc.action = 'create'
-        )
+        ) 
+        and brlb.identifiant_rnb is null
 )
 select
 
@@ -1993,11 +2026,7 @@ select
         rc.user_organization_id::INTEGER as organization_id,
         true as diffusion 
 
-from rnb_changes rc
-
-left join public.batiment_rnb_lien_bdtopo brlb
-	on brlb.identifiant_rnb = rc.rnb_id      
-where brlb.identifiant_rnb is null;
+from rnb_changes rc;
 
 GRANT ALL ON
 pbm.rnb_insert_batiment_rnb_lien_bdtopo__batiments_rnb_moissonnage TO recserveur;
