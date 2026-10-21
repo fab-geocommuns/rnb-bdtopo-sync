@@ -1251,11 +1251,11 @@ PERFORM
 
 
 --traitement bâtiments inclus
-PERFORM
-        processus_divers.rnb_batiment_inclus_creation();
+--PERFORM
+--        processus_divers.rnb_batiment_inclus_creation();
 --select * from processus_divers.rnb_croisements_creation;
-PERFORM
-        processus_divers.rnb_maj_des_tables_de_travail_creation();
+--PERFORM
+--        processus_divers.rnb_maj_des_tables_de_travail_creation();
 --select * from processus_divers.rnb_batiments_rnb_restant_creation; 
 --select * from processus_divers.rnb_batiments_bduni_restant_creation;
 --select * from processus_divers.rnb_batiments_rnb_traites_creation;
@@ -1263,8 +1263,8 @@ PERFORM
 
 
 --traitement bâtiments balcon
-PERFORM
-        processus_divers.rnb_batiment_balcon_et_maj_creation();
+--PERFORM
+--        processus_divers.rnb_batiment_balcon_et_maj_creation();
 
 --select * from processus_divers.rnb_croisements_creation;
 
@@ -1299,24 +1299,7 @@ FROM (
         FROM processus_divers.rnb_batiments_rnb_traites_creation
         WHERE traitement != 'Bâtiment non apparié, à plus de 20m d''un autre bâtiment BDUni'
     ) t1
-
-    UNION
-
-    SELECT
-        t4.cleabs,
-        split_liens,
-        t4.traitement
-    FROM (
-        SELECT
-            t2.cleabs,
-            t3.traitement,
-            regexp_split_to_table(t2.liens_vers_batiment, '/') AS split_liens
-        FROM public.batiment_rnb_lien_bdtopo t2
-        JOIN processus_divers.rnb_batiments_rnb_traites_creation t3
-            ON t2.cleabs = t3.cleabs
-        WHERE t3.traitement != 'Bâtiment non apparié, à plus de 20m d''un autre bâtiment BDUni'
-    ) t4
-) AS t
+) as t
 GROUP BY cleabs;
 
 RETURN 1;
